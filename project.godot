@@ -1,0 +1,29 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="SwordFateCultivationRecord"
+config/description="剑缘修仙录 - A cultivation sect management simulation game"
+run/main_scene="res://Scenes/StartMenu.tscn"
+config/features=PackedStringArray("4.5", "C#")
+config/icon="res://icon.svg"
+
+[autoload]
+
+GameManager="*res://Scenes/GameManager.tscn"
+
+[dotnet]
+
+project/assembly_name="SwordFateCultivationRecord"
+
+[editor]
+
+editor/export/convert_text_resources_to_binary=false
