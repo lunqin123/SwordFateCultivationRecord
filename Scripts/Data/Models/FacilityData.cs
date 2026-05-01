@@ -17,6 +17,7 @@ public class FacilityData
     public int ConstructionCost { get; set; }
     public int UpgradeCostBase { get; set; }
     public int MaxDisciples { get; set; } = 3;
+    public string ImagePath { get; set; } = ""; // 设施图片路径
     public Vector2I GridPosition { get; set; }
 
     public string TypeName => Type switch

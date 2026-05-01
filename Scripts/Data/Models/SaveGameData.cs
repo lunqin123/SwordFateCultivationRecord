@@ -27,6 +27,7 @@ public class SaveGameData
     public List<LogEntry> EventLog { get; set; } = new();
     public Dictionary<int, int> EventCooldowns { get; set; } = new();
     public List<CompanionData> Companions { get; set; } = new();
+    public List<SectQuestData> Quests { get; set; } = new();
     public List<EquipmentData> Equipment { get; set; } = new();
     public int RngSeed { get; set; }
 }

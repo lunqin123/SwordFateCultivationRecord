@@ -5,26 +5,27 @@ public static class FacilityTable
     public record FacilityInfo(
         string Name,
         string Description,
-        int BaseBuildCost,      // spirit stones
-        int UpgradeCostPerLevel, // additional per level
-        int BaseOutput,          // daily resource produced
+        int BaseBuildCost,
+        int UpgradeCostPerLevel,
+        int BaseOutput,
         ResourceType OutputType,
         int MaxDisciples,
-        int BuildDays            // days to construct
+        int BuildDays,
+        int MinSectLevel = 1     // 最低宗门等级要求
     );
 
     private static readonly Dictionary<FacilityType, FacilityInfo> _facilities = new()
     {
         [FacilityType.MeditationChamber] = new("静修室", "提升弟子修炼速度", 100, 80, 5, ResourceType.SpiritEssence, 3, 3),
-        [FacilityType.AlchemyRoom] = new("丹房", "可炼制丹药", 200, 150, 2, ResourceType.Pill, 2, 5),
+        [FacilityType.AlchemyRoom] = new("丹房", "可炼制丹药", 200, 150, 2, ResourceType.Pill, 2, 5, 2),
         [FacilityType.TrainingGround] = new("演武场", "提升弟子战斗能力", 150, 100, 3, ResourceType.SpiritEssence, 5, 4),
-        [FacilityType.Library] = new("藏经阁", "增加弟子悟性", 300, 200, 1, ResourceType.SpiritEssence, 3, 6),
+        [FacilityType.Library] = new("藏经阁", "增加弟子悟性", 300, 200, 1, ResourceType.SpiritEssence, 3, 6, 2),
         [FacilityType.PillRefinery] = new("炼药房", "灵草加工为丹药", 150, 100, 3, ResourceType.Pill, 2, 4),
         [FacilityType.SpiritGarden] = new("灵田", "种植灵草", 80, 60, 5, ResourceType.Herb, 3, 3),
         [FacilityType.OreMine] = new("矿脉", "开采矿石", 120, 90, 4, ResourceType.Ore, 3, 4),
-        [FacilityType.FormationHall] = new("阵法殿", "提升宗门防御", 400, 300, 1, ResourceType.SpiritEssence, 2, 8),
+        [FacilityType.FormationHall] = new("阵法殿", "提升宗门防御", 400, 300, 1, ResourceType.SpiritEssence, 2, 8, 3),
         [FacilityType.DiningHall] = new("膳堂", "提升弟子心情", 60, 40, 10, ResourceType.SpiritEssence, 1, 2),
-        [FacilityType.GuestHall] = new("会客厅", "吸引散人来投", 200, 120, 2, ResourceType.SpiritEssence, 2, 5),
+        [FacilityType.GuestHall] = new("会客厅", "吸引散人来投", 200, 120, 2, ResourceType.SpiritEssence, 2, 5, 2),
     };
 
     public static FacilityInfo GetInfo(FacilityType type) => _facilities[type];

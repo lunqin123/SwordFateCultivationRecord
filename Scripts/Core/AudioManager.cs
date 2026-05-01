@@ -95,7 +95,12 @@ public static class AudioManager
             VolumeDb = Mathf.LinearToDb(GameSettings.MusicVolume * 0.6f),
         };
         _root!.CallDeferred(Node.MethodName.AddChild, _bgmPlayer);
-        _bgmPlayer.Finished += () => { _bgmPlayer.Seek(0); _bgmPlayer.Play(); };
+        _bgmPlayer.Finished += () =>
+        {
+            int next = (GameSettings.BgmIndex + 1) % _bgmPaths.Count;
+            GameSettings.BgmIndex = next;
+            PlayBgmTrack(next);
+        };
         _bgmPlayer.CallDeferred(AudioStreamPlayer.MethodName.Play);
     }
 

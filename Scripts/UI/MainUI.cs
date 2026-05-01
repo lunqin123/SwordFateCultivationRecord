@@ -36,11 +36,13 @@ public partial class MainUI : Control
     private Label _detailAvatarLabel = null!;
     private PanelContainer _detailAvatarPanel = null!;
     private VBoxContainer _equipSection = null!;
+    private Button _bgmIndicator = null!;
+    private Window _bgmSelectPopup = null!;
     // Companion tab
-    private VBoxContainer _companionList = null!, _matchSection = null!;
+    private VBoxContainer _companionList = null!, _matchSection = null!, _questList = null!;
     private OptionButton _matchMaleDrop = null!, _matchFemaleDrop = null!;
     private SettingsWindow _settingsPopup = null!;
-    private VBoxContainer _statsContent = null!;
+    private VBoxContainer _statsContent = null!, _overviewDashboard = null!;
 
 
     public override void _Ready()
@@ -105,6 +107,9 @@ public partial class MainUI : Control
         _nextDayBtn.Pressed += () => { GM.NextDay(); RefreshAll(); };
         _ff7Btn.Pressed += () => { GM.FastForward(7); RefreshAll(); };
         _ff30Btn.Pressed += () => { GM.FastForward(30); RefreshAll(); };
+        // Recruit button in top bar
+        var recruitTopBtn = SmallBtn("招募弟子"); cv.AddChild(recruitTopBtn);
+        recruitTopBtn.Pressed += () => GM.RecruitDisciple();
 
         var rg = new GridContainer { Columns = 4, SizeFlagsHorizontal = SizeFlags.ExpandFill };
         hbox.AddChild(rg);
@@ -129,36 +134,47 @@ public partial class MainUI : Control
         _tabs.AddThemeColorOverride("tab_selected", C(0.22f, 0.18f, 0.30f));
         vbox.AddChild(_tabs);
 
-        // 概况
+        // 概况 (rich dashboard)
         var ov = new VBoxContainer { Name = "概况" }; _tabs.AddChild(ov);
         var os = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; ov.AddChild(os);
         var oc = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; os.AddChild(oc);
-        oc.AddChild(SP(16));
-        oc.AddChild(HL("宗门概况", 20, C(0.91f, 0.72f, 0.29f)));
-        oc.AddChild(SP(8));
-        oc.AddChild(TB("每次操作消耗1天。点「下一天」推进，触发修炼、采集、炼丹等每日活动。"));
-        oc.AddChild(SP(16));
-        // 招募弟子 - centered
-        var rb = Btn("招募弟子（1天）");
-        var rc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        rc.AddChild(rb); oc.AddChild(rc); rb.Pressed += () => GM.RecruitDisciple();
-        oc.AddChild(SP(24));
-        oc.AddChild(HL("建造设施（1天）", 20, C(0.91f, 0.72f, 0.29f)));
-        oc.AddChild(SP(8));
-        // Centered facility grid
-        var gridCc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; oc.AddChild(gridCc);
-        var bg2 = new GridContainer { Columns = 5 }; gridCc.AddChild(bg2);
-        foreach (FacilityType ft in Enum.GetValues<FacilityType>())
-        {
-            var info = FacilityTable.GetInfo(ft);
-            var btn = Btn($"{info.Name}\n{info.BaseBuildCost}灵石\n{info.BuildDays}天"); var f2 = ft;
-            btn.Pressed += () => GM.StartBuild(f2); bg2.AddChild(btn);
-        }
-        oc.AddChild(SP(16));
+        oc.AddChild(SP(10));
+        oc.AddChild(HL("宗门概况", 22, C(0.91f, 0.72f, 0.29f)));
+        oc.AddChild(SP(10));
+        // Keep overviewStats for dynamic refresh
+        _overviewDashboard = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+        oc.AddChild(_overviewDashboard);
+        oc.AddChild(SP(12));
 
         // 弟子
         var dt = new VBoxContainer { Name = "弟子" }; _tabs.AddChild(dt);
         var ds = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; dt.AddChild(ds); _discipleList = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ds.AddChild(_discipleList);
+
+        // 建造
+        var buildTab = new VBoxContainer { Name = "建造" }; _tabs.AddChild(buildTab);
+        var buildScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; buildTab.AddChild(buildScroll);
+        var buildContent = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; buildScroll.AddChild(buildContent);
+        buildContent.AddChild(HL("建造设施（1天）", 18, C(0.91f, 0.72f, 0.29f)));
+        buildContent.AddChild(SP(8));
+        // Build buttons — sorted: unlocked first
+        var facilities = Enum.GetValues<FacilityType>()
+            .Select(ft => (type: ft, info: FacilityTable.GetInfo(ft)))
+            .OrderBy(f => f.info.MinSectLevel > GM.SectLevel ? 1 : 0) // unlocked first
+            .ToList();
+        var buildGrid = new GridContainer { Columns = 4 }; buildContent.AddChild(buildGrid);
+        foreach (var (ft, info) in facilities)
+        {
+            bool locked = GM.SectLevel < info.MinSectLevel;
+            string btnText = locked
+                ? $"{info.Name}\n🔒Lv.{info.MinSectLevel}"
+                : $"{info.Name}\n{info.BaseBuildCost}灵石\n{info.BuildDays}天";
+            var btn = Btn(btnText); var f2 = ft;
+            btn.Disabled = locked;
+            if (!locked) btn.Pressed += () => GM.StartBuild(f2);
+            buildGrid.AddChild(btn);
+        }
+        buildContent.AddChild(SP(8));
+        buildContent.AddChild(TB($"共有{facilities.Count(f => !(GM.SectLevel < f.info.MinSectLevel))}种设施可建造"));
 
         // 设施
         var ft2 = new VBoxContainer { Name = "设施" }; _tabs.AddChild(ft2);
@@ -168,6 +184,11 @@ public partial class MainUI : Control
         var compTab = new VBoxContainer { Name = "道侣" }; _tabs.AddChild(compTab);
         var compScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; compTab.AddChild(compScroll);
         _companionList = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; compScroll.AddChild(_companionList);
+
+        // 任务
+        var questTab = new VBoxContainer { Name = "任务" }; _tabs.AddChild(questTab);
+        var questScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; questTab.AddChild(questScroll);
+        _questList = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; questScroll.AddChild(_questList);
 
         // 日志
         var lt = new VBoxContainer { Name = "日志" }; _tabs.AddChild(lt);
@@ -339,6 +360,35 @@ public partial class MainUI : Control
             onMainMenu: () => GetTree().ChangeSceneToFile("res://Scenes/StartMenu.tscn")
         );
         AddChild(_settingsPopup);
+
+        // BGM indicator (bottom-right corner)
+        _bgmIndicator = new Button
+        {
+            Text = "♪",
+            Alignment = HorizontalAlignment.Center,
+            AnchorLeft = 1.0f, AnchorTop = 1.0f,
+            AnchorRight = 1.0f, AnchorBottom = 1.0f,
+            OffsetLeft = -180, OffsetTop = -28, OffsetRight = -8, OffsetBottom = -4,
+        };
+        _bgmIndicator.AddThemeFontSizeOverride("font_size", 11);
+        _bgmIndicator.AddThemeColorOverride("font_color", C(0.5f, 0.7f, 0.5f));
+        _bgmIndicator.AddThemeColorOverride("font_hover_color", C(0.7f, 1.0f, 0.7f));
+        _bgmIndicator.AddThemeStyleboxOverride("normal", new StyleBoxFlat { BgColor = C(0.08f, 0.06f, 0.12f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 });
+        _bgmIndicator.AddThemeStyleboxOverride("hover", new StyleBoxFlat { BgColor = C(0.15f, 0.12f, 0.22f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 });
+        _bgmIndicator.Flat = true;
+        _bgmIndicator.Pressed += () =>
+        {
+            RefreshBgmPopup();
+            _bgmSelectPopup.PopupCentered();
+        };
+        AddChild(_bgmIndicator);
+
+        // BGM select popup
+        _bgmSelectPopup = new Window { Title = "选择背景音乐", Size = new Vector2I(280, 260), Visible = false, Exclusive = true, Unresizable = true };
+        _bgmSelectPopup.CloseRequested += () => _bgmSelectPopup.Hide();
+        AddChild(_bgmSelectPopup);
+        var bgmV = new VBoxContainer(); bgmV.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); _bgmSelectPopup.AddChild(bgmV);
+        // Content filled by RefreshBgmPopup
     }
 
 
@@ -360,32 +410,70 @@ public partial class MainUI : Control
 
     // ===================== REFRESH =====================
 
-    void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshDisciples(); RefreshFacilities(); RefreshCompanions(); RefreshLog(); RefreshButtons(); RefreshOverviewStats(); }
+    void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshDisciples(); RefreshFacilities(); RefreshCompanions(); RefreshQuests(); RefreshLog(); RefreshBgmIndicator(); RefreshButtons(); RefreshOverviewStats(); }
     void RefreshTime() => _timeLabel.Text = GM.Time.GetDateString();
     void RefreshSectInfo() => _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}  |  声望{GM.SectReputation} 战力{GM.SectPower} 弟子{GM.Disciples.Count}/{GM.MaxDisciples}人";
     void RefreshButtons() { bool b = GM.PendingEvent != null; _nextDayBtn.Disabled = b; _ff7Btn.Disabled = b; _ff30Btn.Disabled = b; }
 
     void RefreshOverviewStats()
     {
-        _statsContent.FreeChildren();
-        _statsContent.AddChild(HL("宗门统计", 15, C(0.91f, 0.72f, 0.29f)));
-        _statsContent.AddChild(SP(4));
+        _overviewDashboard.FreeChildren();
+
+        // Sect info cards
+        var infoGrid = new GridContainer { Columns = 4 };
+        _overviewDashboard.AddChild(infoGrid);
+        InfoCard(infoGrid, "宗门等级", $"Lv.{GM.SectLevel}", C(0.91f, 0.72f, 0.29f));
+        InfoCard(infoGrid, "宗门称号", GM.SectTitle, C(0.91f, 0.72f, 0.29f));
+        InfoCard(infoGrid, "声望", GM.SectReputation.ToString(), C(0.5f, 0.8f, 1.0f));
+        InfoCard(infoGrid, "战力", GM.SectPower.ToString(), C(1.0f, 0.6f, 0.3f));
+        _overviewDashboard.AddChild(SP(10));
+
+        // Disciple & facility summary
+        var summaryGrid = new GridContainer { Columns = 4 };
+        _overviewDashboard.AddChild(summaryGrid);
+        InfoCard(summaryGrid, "弟子", $"{GM.Disciples.Count}/{GM.MaxDisciples}", C(0.3f, 1.0f, 0.3f));
+        InfoCard(summaryGrid, "设施", $"{GM.Facilities.AllFacilities.Count(f => f.IsBuilt)}座", C(0.3f, 1.0f, 0.3f));
+        InfoCard(summaryGrid, "建造中", $"{GM.Facilities.AllFacilities.Count(f => f.IsUnderConstruction)}座", C(1.0f, 0.8f, 0.2f));
+        InfoCard(summaryGrid, "道侣", $"{GM.Companions.AllCompanions.Count(c => c.IsMarried)}对", C(1.0f, 0.5f, 0.7f));
+        _overviewDashboard.AddChild(SP(10));
+
+        // Resource overview
+        _overviewDashboard.AddChild(HL("资源储备", 15, C(0.91f, 0.72f, 0.29f)));
+        _overviewDashboard.AddChild(SP(4));
+        var resGrid = new GridContainer { Columns = 4 };
+        _overviewDashboard.AddChild(resGrid);
+        foreach (ResourceType rt in Enum.GetValues<ResourceType>())
+        {
+            int val = GM.Resources.Get(rt);
+            int inc = GM.Resources.GetIncome(rt);
+            string text = inc > 0 ? $"{ResName(rt)}: {val} (+{inc}/d)" : $"{ResName(rt)}: {val}";
+            var lb = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center };
+            lb.AddThemeFontSizeOverride("font_size", 12);
+            lb.AddThemeColorOverride("font_color", C(0.88f, 0.88f, 0.92f));
+            resGrid.AddChild(lb);
+        }
+        _overviewDashboard.AddChild(SP(8));
+
+        // Daily income detail
+        _overviewDashboard.AddChild(HL("弟子分工与产出", 15, C(0.91f, 0.72f, 0.29f)));
+        _overviewDashboard.AddChild(SP(4));
 
         // Task distribution
         var taskCounts = new int[9];
         foreach (var d in GM.Disciples.AllDisciples) taskCounts[(int)d.CurrentTask]++;
-        var taskLine = "弟子分工: ";
+        var taskLine = "";
         for (int i = 0; i < TaskNames.Length; i++)
-            if (taskCounts[i] > 0) taskLine += $"{TaskNames[i]}{taskCounts[i]}人 ";
+            if (taskCounts[i] > 0) taskLine += $"{TaskNames[i]}×{taskCounts[i]}  ";
+        if (taskLine == "") taskLine = "暂无分工";
         var tl = new Label { Text = taskLine, HorizontalAlignment = HorizontalAlignment.Center }; tl.AddThemeFontSizeOverride("font_size", 12); tl.AddThemeColorOverride("font_color", C(0.88f, 0.88f, 0.92f));
-        _statsContent.AddChild(tl);
+        _overviewDashboard.AddChild(tl);
 
         // Facility summary
         int built = GM.Facilities.AllFacilities.Count(f => f.IsBuilt);
         int building = GM.Facilities.AllFacilities.Count(f => f.IsUnderConstruction);
-        var fl = new Label { Text = $"设施: 已建{built}座 建造中{building}座  宗门等级Lv.{GM.SectLevel}  声望{GM.SectReputation}", HorizontalAlignment = HorizontalAlignment.Center };
+        var fl = new Label { Text = $"设施: 已建{built}座 建造中{building}座", HorizontalAlignment = HorizontalAlignment.Center };
         fl.AddThemeFontSizeOverride("font_size", 12); fl.AddThemeColorOverride("font_color", C(0.88f, 0.88f, 0.92f));
-        _statsContent.AddChild(fl);
+        _overviewDashboard.AddChild(fl);
 
         // Daily income
         var incLine = "每日产出: ";
@@ -396,7 +484,7 @@ public partial class MainUI : Control
         }
         if (incLine == "每日产出: ") incLine += "暂无（建造设施后产出）";
         var il = new Label { Text = incLine, HorizontalAlignment = HorizontalAlignment.Center }; il.AddThemeFontSizeOverride("font_size", 12); il.AddThemeColorOverride("font_color", C(0.3f, 1, 0.3f));
-        _statsContent.AddChild(il);
+        _overviewDashboard.AddChild(il);
 
         // Facility-task synergies
         var synergyLine = "设施加成: ";
@@ -420,9 +508,7 @@ public partial class MainUI : Control
         }
         else synergyLine += GM.Facilities.Count > 0 ? "建造对应设施激活加成" : "暂无";
         var sl2 = new Label { Text = synergyLine, HorizontalAlignment = HorizontalAlignment.Center }; sl2.AddThemeFontSizeOverride("font_size", 11); sl2.AddThemeColorOverride("font_color", C(0.3f, 1, 0.8f));
-        _statsContent.AddChild(sl2);
-
-        _statsContent.AddChild(SP(4));
+        _overviewDashboard.AddChild(sl2);
     }
 
     void RefreshResources()
@@ -539,11 +625,13 @@ public partial class MainUI : Control
             r4.AddThemeColorOverride("font_color", r4Color);
             card.AddChild(r4);
 
-            // Row 5: contribution + skills
+            // Row 5: contribution + proficiency + skills
+            string profText = d.TaskProficiency.TryGetValue(d.CurrentTask, out int prof) && prof > 0
+                ? $"专精{TaskNames[(int)d.CurrentTask]}Lv.{prof}  " : "";
             var skillText = d.Skills.Count > 0
                 ? $"技能: {string.Join(" ", d.Skills.Select(s => $"{SkillName(s.Key)}Lv.{s.Value}"))}"
                 : "";
-            var r5 = new Label { Text = $"贡献 {d.TotalContribution}  {skillText}", HorizontalAlignment = HorizontalAlignment.Center };
+            var r5 = new Label { Text = $"{profText}贡献 {d.TotalContribution}  {skillText}", HorizontalAlignment = HorizontalAlignment.Center };
             r5.AddThemeFontSizeOverride("font_size", 11); r5.AddThemeColorOverride("font_color", C(0.55f, 0.55f, 0.65f));
             card.AddChild(r5);
 
@@ -565,7 +653,7 @@ public partial class MainUI : Control
         _facilityList.FreeChildren();
         _facilityList.AddChild(HL($"设施列表（共{GM.Facilities.Count}座）", 16, C(0.91f, 0.72f, 0.29f)));
         if (GM.Facilities.Count == 0) { _facilityList.AddChild(SP(8)); _facilityList.AddChild(TB("还没有建造任何设施。在「概况」页点击建造。")); return; }
-        foreach (var f in GM.Facilities.AllFacilities)
+        foreach (var f in GM.Facilities.AllFacilities.OrderByDescending(f => f.Level))
         {
             var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
             card.AddThemeConstantOverride("separation", 2);
@@ -574,6 +662,17 @@ public partial class MainUI : Control
             wrapper.AddChild(card);
             _facilityList.AddChild(wrapper);
             var r1 = new HBoxContainer(); card.AddChild(r1);
+            // Facility icon placeholder
+            var facAvatar = new PanelContainer { CustomMinimumSize = new Vector2I(40, 40) };
+            var facBg = new StyleBoxFlat { BgColor = C(0.15f, 0.18f, 0.28f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 };
+            facAvatar.AddThemeStyleboxOverride("panel", facBg);
+            string facIcon = f.Type switch { FacilityType.MeditationChamber => "🧘", FacilityType.AlchemyRoom => "⚗", FacilityType.TrainingGround => "⚔", FacilityType.Library => "📚", FacilityType.PillRefinery => "💊", FacilityType.SpiritGarden => "🌿", FacilityType.OreMine => "⛏", FacilityType.FormationHall => "🔮", FacilityType.DiningHall => "🍽", FacilityType.GuestHall => "🏠", _ => "🏗" };
+            var facLabel = new Label { Text = facIcon, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+            facLabel.AddThemeFontSizeOverride("font_size", 16);
+            facAvatar.AddChild(facLabel);
+            r1.AddChild(facAvatar);
+            r1.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
+
             var nl = new Label { Text = $"{f.TypeName} Lv.{f.Level}", HorizontalAlignment = HorizontalAlignment.Center };
             nl.AddThemeFontSizeOverride("font_size", 15); nl.AddThemeColorOverride("font_color", C(0.91f, 0.72f, 0.29f)); r1.AddChild(nl);
             var sl = new Label { Text = f.StatusText, HorizontalAlignment = HorizontalAlignment.Center };
@@ -831,6 +930,87 @@ public partial class MainUI : Control
         RefreshAll();
     }
 
+    void RefreshQuests()
+    {
+        _questList.FreeChildren();
+        _questList.AddChild(HL($"宗门任务（{GM.Quests.AllQuests.Count(q => q.Completed)}/{GM.Quests.AllQuests.Count}完成）", 16, C(0.91f, 0.72f, 0.29f)));
+        _questList.AddChild(SP(6));
+        foreach (var q in GM.Quests.AllQuests)
+        {
+            var card = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var wrapper = new PanelContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            var bgColor = q.Completed ? C(0.12f, 0.18f, 0.12f) : C(0.16f, 0.13f, 0.22f);
+            wrapper.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = bgColor, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6, CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6 });
+            wrapper.AddChild(card);
+            _questList.AddChild(wrapper);
+
+            var title = new Label { Text = q.Completed ? $"✓ {q.Title}" : q.Title, HorizontalAlignment = HorizontalAlignment.Center };
+            title.AddThemeFontSizeOverride("font_size", 14);
+            title.AddThemeColorOverride("font_color", q.Completed ? C(0.3f, 1, 0.3f) : C(0.91f, 0.72f, 0.29f));
+            card.AddChild(title);
+
+            var desc = new Label { Text = $"{q.Description}  [{q.ProgressText}]", HorizontalAlignment = HorizontalAlignment.Center };
+            desc.AddThemeFontSizeOverride("font_size", 12);
+            desc.AddThemeColorOverride("font_color", C(0.88f, 0.88f, 0.92f));
+            card.AddChild(desc);
+
+            var reward = new Label { Text = $"奖励: {q.RewardText}", HorizontalAlignment = HorizontalAlignment.Center };
+            reward.AddThemeFontSizeOverride("font_size", 11);
+            reward.AddThemeColorOverride("font_color", C(0.5f, 0.8f, 0.5f));
+            card.AddChild(reward);
+
+            _questList.AddChild(SP(4));
+        }
+    }
+
+    void RefreshBgmIndicator()
+    {
+        if (AudioManager.BgmNames.Count > 0)
+        {
+            int idx = AudioManager.CurrentBgmIndex % AudioManager.BgmNames.Count;
+            _bgmIndicator.Text = $"♪ {AudioManager.BgmNames[idx]}";
+        }
+    }
+
+    void RefreshBgmPopup()
+    {
+        var vbox = (VBoxContainer)_bgmSelectPopup.GetChild(0);
+        vbox.FreeChildren();
+        vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 6) });
+        var title = new Label { Text = "选择背景音乐", HorizontalAlignment = HorizontalAlignment.Center };
+        title.AddThemeFontSizeOverride("font_size", 14);
+        title.AddThemeColorOverride("font_color", C(0.91f, 0.72f, 0.29f));
+        vbox.AddChild(title);
+        vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 8) });
+
+        for (int i = 0; i < AudioManager.BgmNames.Count; i++)
+        {
+            int idx = i;
+            var isCurrent = i == AudioManager.CurrentBgmIndex;
+            var btn = new Button
+            {
+                Text = isCurrent ? $"▶ {AudioManager.BgmNames[i]}" : AudioManager.BgmNames[i],
+                Alignment = HorizontalAlignment.Center,
+                CustomMinimumSize = new Vector2I(0, 30),
+            };
+            btn.AddThemeFontSizeOverride("font_size", 12);
+            btn.AddThemeColorOverride("font_color", isCurrent ? C(0.3f, 1, 0.3f) : C(0.88f, 0.88f, 0.92f));
+            btn.AddThemeColorOverride("font_hover_color", C(0.91f, 0.72f, 0.29f));
+            var sb = new StyleBoxFlat { BgColor = isCurrent ? C(0.12f, 0.20f, 0.12f) : C(0.15f, 0.12f, 0.20f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 };
+            var sh = new StyleBoxFlat { BgColor = C(0.25f, 0.20f, 0.35f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 };
+            btn.AddThemeStyleboxOverride("normal", sb);
+            btn.AddThemeStyleboxOverride("hover", sh);
+            btn.Pressed += () =>
+            {
+                AudioManager.SetBgm(idx);
+                _bgmSelectPopup.Hide();
+                RefreshBgmIndicator();
+            };
+            vbox.AddChild(btn);
+            vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 2) });
+        }
+    }
+
     void RefreshLog() { _logList.Clear(); foreach (var e in GM.EventLogEntries) _logList.AddItem($"第{e.Day}日|{e.Title}:{e.Message}"); }
     void AddLog(string m) { GM.EventLogEntries.Add(new LogEntry { Title = "日志", Message = m, Day = GM.Time.Day }); if (GM.EventLogEntries.Count > 200) GM.EventLogEntries.RemoveAt(0); _logList?.AddItem($"第{GM.Time.Day}日|{m}"); }
 
@@ -867,7 +1047,13 @@ public partial class MainUI : Control
                 if (comp.IsMarried) _detailStamina.Text += " [已结道侣]";
             }
         }
-        _detailSkills.Text = d.Skills.Count > 0 ? $"技能: {string.Join(", ", d.Skills.Select(s => $"{SkillName(s.Key)}(Lv.{s.Value})"))}" : "技能: 无";
+        string skillStr = d.Skills.Count > 0
+            ? $"技能: {string.Join(", ", d.Skills.Select(s => $"{SkillName(s.Key)}Lv.{s.Value}"))}"
+            : "技能: 无";
+        string profStr = d.TaskProficiency.Count > 0
+            ? $" | 专精: {string.Join(" ", d.TaskProficiency.Where(kv => kv.Value > 0).Select(kv => $"{TaskNames[(int)kv.Key]}Lv.{kv.Value}"))}"
+            : "";
+        _detailSkills.Text = skillStr + profStr;
 
         // Equipment section
         _detailEquip.Text = "";
@@ -973,6 +1159,23 @@ public partial class MainUI : Control
         return parts.Count > 0 ? $"[ {string.Join("  |  ", parts)} ]" : "";
     }
 
+    static void InfoCard(GridContainer grid, string label, string value, Color valColor)
+    {
+        var card = new VBoxContainer();
+        var wrapper = new PanelContainer();
+        wrapper.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = C(0.12f, 0.10f, 0.18f), CornerRadiusBottomLeft = 5, CornerRadiusBottomRight = 5, CornerRadiusTopLeft = 5, CornerRadiusTopRight = 5 });
+        wrapper.AddChild(card);
+        var lb = new Label { Text = label, HorizontalAlignment = HorizontalAlignment.Center };
+        lb.AddThemeFontSizeOverride("font_size", 11);
+        lb.AddThemeColorOverride("font_color", C(0.55f, 0.55f, 0.65f));
+        card.AddChild(lb);
+        var vl = new Label { Text = value, HorizontalAlignment = HorizontalAlignment.Center };
+        vl.AddThemeFontSizeOverride("font_size", 18);
+        vl.AddThemeColorOverride("font_color", valColor);
+        card.AddChild(vl);
+        grid.AddChild(wrapper);
+    }
+
     static string SkillName(int id) => id switch
     {
         1 => "修炼加速", 2 => "战斗技巧", 3 => "炼丹精通",
@@ -1011,7 +1214,6 @@ public partial class MainUI : Control
         return b;
     }
 }
-
 // ===================== EXTENSIONS =====================
 
 internal static class UIColums

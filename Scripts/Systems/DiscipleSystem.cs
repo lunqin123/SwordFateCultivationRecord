@@ -116,6 +116,14 @@ public class DiscipleSystem
                 continue;
             }
 
+            // Increment task proficiency (chance based on task progress)
+            if (d.CurrentTask != DiscipleTaskType.Rest)
+            {
+                d.TaskProficiency.TryGetValue(d.CurrentTask, out int prof);
+                if (prof < 5 && _rng.NextDouble() < 0.02) // 2% per day
+                    d.TaskProficiency[d.CurrentTask] = prof + 1;
+            }
+
             // All non-rest tasks consume stamina
             d.CurrentStamina -= 10;
             if (d.CurrentStamina <= 0)
@@ -130,6 +138,9 @@ public class DiscipleSystem
             d.Mood = Math.Clamp(d.Mood, 0, 100);
 
             double bonus = 1.0 + taskBonus[(int)d.CurrentTask];
+            d.TaskProficiency.TryGetValue(d.CurrentTask, out int proficiency);
+            double profBonus = 1.0 + proficiency * 0.08; // +8% per proficiency level
+            bonus *= profBonus;
 
             switch (d.CurrentTask)
             {

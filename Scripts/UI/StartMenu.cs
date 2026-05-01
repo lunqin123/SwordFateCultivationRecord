@@ -177,7 +177,7 @@ public partial class StartMenu : Control
         vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 10) });
 
         // Text input
-        _nameInput = new LineEdit { Text = "无名剑宗", CustomMinimumSize = new Vector2I(0, 36) };
+        _nameInput = new LineEdit { Text = "无名剑宗", CustomMinimumSize = new Vector2I(300, 38) };
         _nameInput.AddThemeFontSizeOverride("font_size", 16);
         _nameInput.AddThemeColorOverride("font_color", UIColums.Gold);
         var inputCc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };

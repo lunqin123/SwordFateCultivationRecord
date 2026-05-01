@@ -69,9 +69,9 @@ public class DiscipleData
 
     public int TotalContribution { get; set; }
 
-    public int ConsecutiveLowMoodDays { get; set; } // days with mood < 15
+    public int ConsecutiveLowMoodDays { get; set; }
+    public Dictionary<DiscipleTaskType, int> TaskProficiency { get; set; } = new(); // task type -> level (0-5)
 
-    // Task-specific progress (combat exp, gathering stockpile, etc.)
     public double TaskProgress { get; set; }
 
     public int CombatPower => CalculateCombatPower();

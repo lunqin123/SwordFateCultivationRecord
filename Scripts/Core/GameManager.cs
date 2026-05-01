@@ -12,6 +12,7 @@ public partial class GameManager : Node
 	public EventSystem Events { get; private set; } = new();
 	public SaveLoadManager SaveLoad { get; private set; } = new();
 	public CompanionSystem Companions { get; private set; } = new();
+	public SectQuestSystem Quests { get; private set; } = new();
 	public List<EquipmentData> AllEquipment { get; private set; } = new();
 
 	// Sect state
@@ -66,6 +67,8 @@ public partial class GameManager : Node
 		Facilities = new FacilitySystem();
 		Events = new EventSystem();
 		Companions = new CompanionSystem();
+		Quests = new SectQuestSystem();
+		Quests.Initialize();
 		AllEquipment = new List<EquipmentData>();
 		SectName = "无名剑宗";
 		SectLevel = 1;
@@ -133,6 +136,10 @@ public partial class GameManager : Node
 
 		// 6. Sect level check
 		CheckSectLevelUp();
+
+		// Quest progress check
+		Quests.CheckProgress(this);
+		Quests.RefreshCompleted(this);
 
 		// 7. Advance day first, then try random event
 		Time.AdvanceDay();
@@ -206,7 +213,7 @@ public partial class GameManager : Node
 	{
 		if (!IsInitialized) return;
 		var f = Facilities.Get(facilityId);
-		if (f == null || !f.IsBuilt || f.Level >= f.MaxLevel) return;
+		if (f == null || !f.IsBuilt || f.IsUnderConstruction || f.Level >= f.MaxLevel) return;
 
 		int cost = FacilityTable.GetUpgradeCost(f.Type, f.Level);
 		if (!Resources.Spend(ResourceType.SpiritStone, cost)) return;

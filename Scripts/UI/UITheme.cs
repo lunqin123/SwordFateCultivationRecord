@@ -26,7 +26,7 @@ public static class UITheme
         if (_font == null) return;
         var theme = root.Theme ?? new Theme();
         theme.DefaultFont = _font;
-        theme.DefaultFontSize = 14;
+        theme.DefaultFontSize = 16;
         root.Theme = theme;
     }
 
