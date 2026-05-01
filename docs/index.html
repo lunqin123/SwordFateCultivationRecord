@@ -16,12 +16,12 @@
   }
   .bg-pattern {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(ellipse at 50% 0%, #1a1530 0%, #0d0a12 70%);
+    background: url('bg.png') center/cover no-repeat;
     z-index: -2;
   }
-  .bg-mountains {
-    position: fixed; bottom: 0; left: 0; width: 100%; height: 40%;
-    background: linear-gradient(180deg, transparent, #0d0a12 80%);
+  .bg-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5,3,8,0.75);
     z-index: -1;
   }
   .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
@@ -88,9 +88,12 @@
     border-radius: 10px; overflow: hidden; aspect-ratio: 16/10;
     display: flex; align-items: center; justify-content: center;
   }
-  .screenshot .placeholder {
-    font-size: 48px; color: rgba(219,176,66,0.2);
+  .screenshot img {
+    width: 100%; height: 100%; object-fit: cover;
   }
+  .character-row { display: flex; gap: 20px; align-items: center; justify-content: center; }
+  .character-row img { width: 80px; height: 80px; border-radius: 50%; border: 2px solid rgba(219,176,66,0.3); }
+  .resource-icon { width: 32px; height: 32px; vertical-align: middle; }
 
   /* Footer */
   footer { text-align: center; padding: 40px 0; color: #504868; font-size: 13px; }
@@ -106,7 +109,7 @@
 </head>
 <body>
 <div class="bg-pattern"></div>
-<div class="bg-mountains"></div>
+<div class="bg-overlay"></div>
 
 <div class="container">
   <!-- Hero -->
@@ -184,13 +187,20 @@
     </div>
   </section>
 
+  <!-- Characters -->
+  <section>
+    <h2 class="section-title">弟子形象</h2>
+    <div class="character-row">
+      <div style="text-align:center"><img src="male.png" alt="男弟子"><p style="color:#8a8098;margin-top:8px;font-size:13px">♂ 男弟子</p></div>
+      <div style="text-align:center"><img src="female.png" alt="女弟子"><p style="color:#8a8098;margin-top:8px;font-size:13px">♀ 女弟子</p></div>
+    </div>
+  </section>
+
   <!-- Screenshots -->
   <section>
     <h2 class="section-title">游戏截图</h2>
     <div class="screenshots">
-      <div class="screenshot"><span class="placeholder">🏯 主菜单</span></div>
-      <div class="screenshot"><span class="placeholder">👥 弟子列表</span></div>
-      <div class="screenshot"><span class="placeholder">⚔️ 宗门概况</span></div>
+      <div class="screenshot"><img src="bg.png" alt="主界面" loading="lazy"></div>
     </div>
   </section>
 
