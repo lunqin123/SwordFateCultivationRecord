@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>剑缘修仙录 - 修仙宗门模拟经营游戏</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0a12;
+    color: #e0d8c8;
+    font-family: "Microsoft YaHei", sans-serif;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+  .bg-pattern {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 50% 0%, #1a1530 0%, #0d0a12 70%);
+    z-index: -2;
+  }
+  .bg-mountains {
+    position: fixed; bottom: 0; left: 0; width: 100%; height: 40%;
+    background: linear-gradient(180deg, transparent, #0d0a12 80%);
+    z-index: -1;
+  }
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+  /* Hero */
+  .hero {
+    text-align: center; padding: 80px 0 60px;
+    position: relative;
+  }
+  .hero h1 {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: 72px; color: #dbb042;
+    text-shadow: 0 0 40px rgba(219,176,66,0.3);
+    margin-bottom: 8px;
+  }
+  .hero .subtitle { font-size: 18px; color: #8a8098; letter-spacing: 4px; }
+  .hero .tagline { font-size: 20px; color: #c0a870; margin-top: 16px; }
+  .hero .btns { margin-top: 32px; display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+  .btn {
+    display: inline-block; padding: 14px 36px; border-radius: 6px;
+    font-size: 16px; text-decoration: none; transition: all 0.2s;
+    border: 1px solid rgba(219,176,66,0.4);
+  }
+  .btn-primary { background: #dbb042; color: #0d0a12; font-weight: bold; }
+  .btn-primary:hover { background: #e8c864; transform: translateY(-2px); }
+  .btn-ghost { color: #dbb042; }
+  .btn-ghost:hover { background: rgba(219,176,66,0.1); }
+
+  /* Sections */
+  section { padding: 60px 0; }
+  .section-title {
+    text-align: center; font-size: 32px; color: #dbb042;
+    margin-bottom: 40px; position: relative;
+  }
+  .section-title::after {
+    content: ''; display: block; width: 60px; height: 2px;
+    background: #dbb042; margin: 12px auto 0; opacity: 0.5;
+  }
+
+  /* Features */
+  .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+  .feature {
+    background: rgba(20,16,30,0.8); border: 1px solid rgba(219,176,66,0.15);
+    border-radius: 10px; padding: 28px; transition: border-color 0.3s;
+  }
+  .feature:hover { border-color: rgba(219,176,66,0.4); }
+  .feature .icon { font-size: 36px; margin-bottom: 12px; }
+  .feature h3 { color: #dbb042; margin-bottom: 8px; font-size: 18px; }
+  .feature p { color: #9088a0; font-size: 14px; }
+
+  /* Systems grid */
+  .systems { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .sys-card {
+    background: rgba(20,16,30,0.6); border: 1px solid rgba(219,176,66,0.1);
+    border-radius: 8px; padding: 20px; text-align: center;
+  }
+  .sys-card h4 { color: #c0a870; font-size: 16px; margin-bottom: 4px; }
+  .sys-card .count { font-size: 28px; color: #dbb042; }
+
+  /* Screenshots */
+  .screenshots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+  .screenshot {
+    background: rgba(20,16,30,0.8); border: 1px solid rgba(219,176,66,0.15);
+    border-radius: 10px; overflow: hidden; aspect-ratio: 16/10;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .screenshot .placeholder {
+    font-size: 48px; color: rgba(219,176,66,0.2);
+  }
+
+  /* Footer */
+  footer { text-align: center; padding: 40px 0; color: #504868; font-size: 13px; }
+  footer a { color: #8a7098; }
+
+  /* Animations */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(40px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-up { animation: fadeUp 0.8s ease-out; }
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="bg-mountains"></div>
+
+<div class="container">
+  <!-- Hero -->
+  <header class="hero fade-up">
+    <h1>剑缘修仙录</h1>
+    <p class="subtitle">Sword Fate · Cultivation Record</p>
+    <p class="tagline">— 修仙宗门模拟经营游戏 —</p>
+    <div class="btns">
+      <a href="https://github.com/lunqin123/SwordFateCultivationRecord" class="btn btn-primary">GitHub 下载</a>
+      <a href="#features" class="btn btn-ghost">了解更多</a>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <section>
+    <div class="systems">
+      <div class="sys-card"><div class="count">33+</div>C# 源文件</div>
+      <div class="sys-card"><div class="count">5000+</div>行代码</div>
+      <div class="sys-card"><div class="count">7</div>大子系统</div>
+      <div class="sys-card"><div class="count">5</div>首古风BGM</div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features">
+    <h2 class="section-title">游戏特色</h2>
+    <div class="features">
+      <div class="feature">
+        <div class="icon">🏯</div>
+        <h3>宗门经营</h3>
+        <p>建造升级10种设施，管理7种资源，发展你的修仙门派</p>
+      </div>
+      <div class="feature">
+        <div class="icon">👥</div>
+        <h3>弟子培养</h3>
+        <p>9种任务分配，6种灵根资质，8种技能学习，任务专精系统</p>
+      </div>
+      <div class="feature">
+        <div class="icon">💕</div>
+        <h3>道侣姻缘</h3>
+        <p>牵线搭桥，双修加成，好感度系统，子嗣传承道脉</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⚔️</div>
+        <h3>法器装备</h3>
+        <p>4品质16种法器，炼器锻造，属性加成，自由装备</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🎲</div>
+        <h3>随机事件</h3>
+        <p>18个随机事件，道侣专属剧情，每次选择影响宗门命运</p>
+      </div>
+      <div class="feature">
+        <div class="icon">🎵</div>
+        <h3>古风音画</h3>
+        <p>毛笔楷书字体，5首古风BGM循环，中国风视觉设计</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Systems -->
+  <section>
+    <h2 class="section-title">核心系统</h2>
+    <div class="systems" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+      <div class="sys-card"><h4>时间系统</h4>回合制推进</div>
+      <div class="sys-card"><h4>资源系统</h4>7种资源</div>
+      <div class="sys-card"><h4>弟子系统</h4>9种任务</div>
+      <div class="sys-card"><h4>设施系统</h4>10种设施</div>
+      <div class="sys-card"><h4>事件系统</h4>18个事件</div>
+      <div class="sys-card"><h4>道侣系统</h4>牵线双修</div>
+      <div class="sys-card"><h4>装备系统</h4>4品质16种</div>
+      <div class="sys-card"><h4>任务系统</h4>宗门任务</div>
+      <div class="sys-card"><h4>宗门等级</h4>7级8称号</div>
+      <div class="sys-card"><h4>存档系统</h4>10档+自动</div>
+    </div>
+  </section>
+
+  <!-- Screenshots -->
+  <section>
+    <h2 class="section-title">游戏截图</h2>
+    <div class="screenshots">
+      <div class="screenshot"><span class="placeholder">🏯 主菜单</span></div>
+      <div class="screenshot"><span class="placeholder">👥 弟子列表</span></div>
+      <div class="screenshot"><span class="placeholder">⚔️ 宗门概况</span></div>
+    </div>
+  </section>
+
+  <!-- Tech -->
+  <section>
+    <h2 class="section-title">技术栈</h2>
+    <div style="text-align:center; color:#8a8098; display:flex; gap:20px; justify-content:center; flex-wrap:wrap;">
+      <span style="background:rgba(20,16,30,0.8);padding:10px 24px;border-radius:6px;border:1px solid rgba(219,176,66,0.15)">Godot 4.5.1 Mono</span>
+      <span style="background:rgba(20,16,30,0.8);padding:10px 24px;border-radius:6px;border:1px solid rgba(219,176,66,0.15)">C# .NET 9.0</span>
+      <span style="background:rgba(20,16,30,0.8);padding:10px 24px;border-radius:6px;border:1px solid rgba(219,176,66,0.15)">全程序化 UI</span>
+      <span style="background:rgba(20,16,30,0.8);padding:10px 24px;border-radius:6px;border:1px solid rgba(219,176,66,0.15)">JSON 存档</span>
+    </div>
+  </section>
+
+  <footer>
+    <p>「剑缘修仙录」SwordFateCultivationRecord · Godot 4.5 Mono C#</p>
+    <p><a href="https://github.com/lunqin123/SwordFateCultivationRecord">GitHub</a> · 开源项目</p>
+  </footer>
+</div>
+</body>
+</html>
