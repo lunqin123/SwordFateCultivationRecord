@@ -10,7 +10,7 @@ public partial class MainUI : Control
 	// Top bar
 	private Label _timeLabel = null!, _sectLabel = null!;
 	private readonly Dictionary<ResourceType, Label> _resourceLabels = new();
-	private readonly Dictionary<ResourceType, Control> _resourceAnchors = new(); // for float animations
+	private readonly Dictionary<ResourceType, HBoxContainer> _resourceAnchors = new(); // for float animations
 
 	// Bottom bar
 	private Button _nextDayBtn = null!;
@@ -161,13 +161,11 @@ public partial class MainUI : Control
 		var resRow = new HBoxContainer(); topHBox.AddChild(resRow);
 		foreach (ResourceType rt in Enum.GetValues<ResourceType>())
 		{
-			var anchor = new Control { Name = "Anchor_" + rt.ToString() }; // anchor for float animations
-			_resourceAnchors[rt] = anchor;
-			var innerRow = new HBoxContainer(); anchor.AddChild(innerRow);
+			var innerRow = new HBoxContainer(); _resourceAnchors[rt] = innerRow;
 			var resIcon = SpriteSheetManager.GetResourceIcon(rt);
 			if (resIcon != null) { var icon = new TextureRect { Texture = resIcon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(20, 20) }; innerRow.AddChild(icon); innerRow.AddChild(new Control { CustomMinimumSize = new Vector2I(2, 0) }); }
 			var lb = new Label(); lb.AddThemeFontSizeOverride("font_size", 12); _resourceLabels[rt] = lb; innerRow.AddChild(lb);
-			resRow.AddChild(anchor); resRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+			resRow.AddChild(innerRow); resRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
 		}
 		topHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
 
@@ -580,7 +578,7 @@ public partial class MainUI : Control
 		var cardGrid = new GridContainer { Columns = 3 }; c.AddChild(cardGrid);
 		foreach (var d in GM.Disciples.AllDisciples)
 		{
-			int did = d.Id; var card = MakeCard(220); var cv = (VBoxContainer)card.GetChild(0);
+			int did = d.Id; var card = MakeCard(220, 320); var cv = (VBoxContainer)card.GetChild(0);
 			// Checkbox
 			var cb = new CheckBox { SizeFlagsHorizontal = SizeFlags.ExpandFill }; _batchChecks[did] = cb;
 			var checkRow = new HBoxContainer(); checkRow.AddChild(cb); cv.AddChild(checkRow);
@@ -1127,7 +1125,7 @@ public partial class MainUI : Control
 	static Control HR() { var r = new ColorRect { CustomMinimumSize = new Vector2I(0, 1), Color = UITheme.GoldDark, SizeFlagsHorizontal = SizeFlags.ExpandFill }; var mc = new MarginContainer(); mc.AddThemeConstantOverride("margin_left", 40); mc.AddThemeConstantOverride("margin_right", 40); mc.AddChild(r); return mc; }
 	static void StatCard(GridContainer grid, string label, string value, Color valColor) { var card = new PanelContainer { CustomMinimumSize = new Vector2I(140, 60) }; var style = UITheme.CardStyle(); style.ContentMarginLeft = 10; style.ContentMarginRight = 10; style.ContentMarginTop = 8; style.ContentMarginBottom = 8; card.AddThemeStyleboxOverride("panel", style); var cv = new VBoxContainer(); card.AddChild(cv); var lb = new Label { Text = label, HorizontalAlignment = HorizontalAlignment.Center }; if (UITheme.BodyFont != null) lb.AddThemeFontOverride("font", UITheme.BodyFont); lb.AddThemeFontSizeOverride("font_size", 11); lb.AddThemeColorOverride("font_color", UITheme.TextDim); cv.AddChild(lb); var vl = new Label { Text = value, HorizontalAlignment = HorizontalAlignment.Center }; if (UITheme.TitleFont != null) vl.AddThemeFontOverride("font", UITheme.TitleFont); vl.AddThemeFontSizeOverride("font_size", 22); vl.AddThemeColorOverride("font_color", valColor); cv.AddChild(vl); grid.AddChild(card); }
 	static CenterContainer CenteredGrid(GridContainer grid) { var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(grid); return cc; }
-	static PanelContainer MakeCard(int minWidth) { var card = new PanelContainer { CustomMinimumSize = new Vector2I(minWidth, 0), ClipContents = true }; var s = UITheme.CardStyle(); s.ContentMarginLeft = 8; s.ContentMarginRight = 8; s.ContentMarginTop = 8; s.ContentMarginBottom = 8; card.AddThemeStyleboxOverride("panel", s); var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(content); return card; }
+	static PanelContainer MakeCard(int minWidth, int minHeight = 0) { var card = new PanelContainer { CustomMinimumSize = new Vector2I(minWidth, minHeight), ClipContents = true }; var s = UITheme.CardStyle(); s.ContentMarginLeft = 8; s.ContentMarginRight = 8; s.ContentMarginTop = 8; s.ContentMarginBottom = 8; card.AddThemeStyleboxOverride("panel", s); var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(content); return card; }
 	static PanelContainer MakeAvatarCircle(bool isMale, int size) { var avatar = new PanelContainer { CustomMinimumSize = new Vector2I(size, size) }; var avatarBg = new StyleBoxFlat { BgColor = isMale ? new Color(0.14f, 0.18f, 0.28f) : new Color(0.26f, 0.12f, 0.20f), CornerRadiusBottomLeft = size / 2, CornerRadiusBottomRight = size / 2, CornerRadiusTopLeft = size / 2, CornerRadiusTopRight = size / 2, BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderColor = UITheme.GoldDark }; avatar.AddThemeStyleboxOverride("panel", avatarBg); var avatarTex = SpriteSheetManager.GetAvatar(isMale); if (avatarTex != null) avatar.AddChild(new TextureRect { Texture = avatarTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, CustomMinimumSize = new Vector2I(size - 4, size - 4) }); else { var label = new Label { Text = isMale ? "♂" : "♀", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }; label.AddThemeFontSizeOverride("font_size", size / 3 + 6); label.AddThemeColorOverride("font_color", isMale ? new Color(0.5f, 0.7f, 1.0f) : new Color(1.0f, 0.5f, 0.7f)); avatar.AddChild(label); } return avatar; }
 	static void StatLine(VBoxContainer parent, string label, int value, Color color) { var row = new HBoxContainer(); row.AddChild(new Label { Text = $"{label}:", CustomMinimumSize = new Vector2I(30, 0) }.WithFont(10, UITheme.TextDim)); var bar = new ColorRect { CustomMinimumSize = new Vector2I((int)(value * 0.8f), 6) }; bar.Color = color; row.AddChild(bar); row.AddChild(new Label { Text = value.ToString() }.WithFont(10, color)); parent.AddChild(row); }
 	static string BarsString(double current, double max, int segments) { double ratio = Math.Clamp(current / max, 0, 1); int filled = (int)(ratio * segments); return "[" + new string('█', filled) + new string('░', segments - filled) + "]"; }

@@ -166,13 +166,6 @@ public partial class GameManager : Node
 			}
 		}
 
-		// 7. Auto-recruit
-		if (_rng.NextDouble() < 0.08 * (1 + SectReputation / 200.0) && Disciples.Count < MaxDisciples)
-		{
-			var d = Disciples.Recruit();
-			EventBus.EmitNotification("宗门谕令", $"散人{d.Name}仰慕宗门声望，前来投奔！");
-		}
-
 		// 8. Sect level check
 		CheckSectLevelUp();
 
