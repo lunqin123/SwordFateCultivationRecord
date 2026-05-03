@@ -698,25 +698,110 @@ public partial class MainUI : Control
 	{
 		var c = _tabContents[4]; c.FreeChildren(); var allComps = GM.Companions.AllCompanions;
 		c.AddChild(HL($"道缘谱（{allComps.Count}对）", 18, UITheme.Gold)); c.AddChild(SP(10));
-		if (allComps.Count > 0) { var cg = new GridContainer { Columns = 2 }; c.AddChild(cg);
-			foreach (var comp in allComps) { var d1 = GM.Disciples.Get(comp.DiscipleId1); var d2 = GM.Disciples.Get(comp.DiscipleId2); if (d1 == null || d2 == null) continue; var card = MakeCard(300); var cv = (VBoxContainer)card.GetChild(0);
-				var avRow = new HBoxContainer(); var ca1 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; avRow.AddChild(ca1); ca1.AddChild(MakeAvatarCircle(d1.IsMale, 44)); var hl2 = new Label { Text = " ❤ ", VerticalAlignment = VerticalAlignment.Center }; hl2.AddThemeFontSizeOverride("font_size", 18); hl2.AddThemeColorOverride("font_color", new Color(1, 0.4f, 0.5f)); avRow.AddChild(hl2); var ca2 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; avRow.AddChild(ca2); ca2.AddChild(MakeAvatarCircle(d2.IsMale, 44)); cv.AddChild(avRow); cv.AddChild(SP(4));
-				string g1 = d1.IsMale ? "♂" : "♀", g2 = d2.IsMale ? "♂" : "♀"; cv.AddChild(new Label { Text = $"{g1}{d1.Name}  &  {g2}{d2.Name}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.Gold));
-				cv.AddChild(new Label { Text = comp.IsMarried ? "💍 已结道缘" : "未结道缘", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, comp.IsMarried ? new Color(1, 0.6f, 0.8f) : UITheme.TextDim));
-				cv.AddChild(new Label { Text = $"好感度: {comp.Affection:F0}/100" }.WithFont(11, UITheme.TextPrimary));
-				var bar = new ColorRect { CustomMinimumSize = new Vector2I((int)(comp.Affection * 2), 5) }; bar.Color = comp.Affection >= 80 ? new Color(1, 0.3f, 0.6f) : comp.Affection >= 60 ? new Color(1, 0.6f, 0.2f) : new Color(0.5f, 0.5f, 0.8f); cv.AddChild(bar);
-				bool bc2 = d1.CurrentTask == DiscipleTaskType.Cultivate && d2.CurrentTask == DiscipleTaskType.Cultivate; cv.AddChild(new Label { Text = bc2 ? $"双修加成: +{comp.DualCultivationBonus * 100:F0}% (生效中)" : $"双修加成: +{comp.DualCultivationBonus * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, bc2 ? UITheme.TextGreen : UITheme.TextDim));
-				cv.AddChild(SP(4));
-				var br = new HBoxContainer(); var bcr = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; br.AddChild(bcr); int cId = comp.Id;
-				var g1b = SmallBtn("赠丹药"); g1b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.Pill, 1); bcr.AddChild(g1b); var g2b = SmallBtn("赠灵石"); g2b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.SpiritStone, 50); bcr.AddChild(g2b);
-				if (!comp.IsMarried) { var mb = SmallBtn("结道缘"); mb.Disabled = comp.Affection < 60; mb.Pressed += () => GM.ProposeMarriage(cId); bcr.AddChild(mb); }
-				var bb = SmallBtn("和离"); bb.Pressed += () => GM.BreakUpCompanion(cId); bcr.AddChild(bb); cv.AddChild(br); cg.AddChild(card); }
-			c.AddChild(SP(14)); } else { c.AddChild(TB("尚无道缘。使用下方功能为弟子牵线搭桥。", UITheme.TextDim, 13)); c.AddChild(SP(10)); }
 
+		if (allComps.Count > 0)
+		{
+			foreach (var comp in allComps)
+			{
+				var d1 = GM.Disciples.Get(comp.DiscipleId1); var d2 = GM.Disciples.Get(comp.DiscipleId2);
+				if (d1 == null || d2 == null) continue;
+				var card = MakeCard(500); var cv = (VBoxContainer)card.GetChild(0);
+
+				// Header: affection + status
+				var hdr = new HBoxContainer();
+				hdr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+				Color affC = comp.Affection >= 80 ? new Color(1,0.4f,0.6f) : comp.Affection >= 60 ? new Color(1,0.6f,0.3f) : UITheme.TextDim;
+				hdr.AddChild(new Label { Text = $"好感 {comp.Affection:F0}/100" }.WithFont(12, affC));
+				hdr.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+				Color stC = comp.IsMarried ? new Color(1,0.5f,0.7f) : new Color(1,0.6f,0.3f);
+				hdr.AddChild(new Label { Text = comp.IsMarried ? "[ 已结道缘 ]" : "[ 结缘中 ]" }.WithFont(12, stC));
+				cv.AddChild(hdr); cv.AddChild(SP(4));
+
+				// Affection bar
+				var affBar = new ColorRect { CustomMinimumSize = new Vector2I((int)(comp.Affection * 5), 4) };
+				affBar.Color = affC;
+				cv.AddChild(affBar); cv.AddChild(SP(8));
+
+				// Two disciple panels
+				var bothRow = new HBoxContainer();
+
+				// -- Left --
+				var lp = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+				var lac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; lac.AddChild(MakeAvatarCircle(d1.IsMale, 44)); lp.AddChild(lac); lp.AddChild(SP(3));
+				lp.AddChild(new Label { Text = (d1.IsMale?"♂":"♀") + " " + d1.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.Gold));
+				lp.AddChild(new Label { Text = d1.FullRealmName, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, RealmColor(d1.Realm)));
+				lp.AddChild(new Label { Text = "天赋"+d1.Talent+" 悟性"+d1.Comprehension, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+				lp.AddChild(new Label { Text = "体质"+d1.Constitution+" 神识"+d1.Spirit, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+				lp.AddChild(new Label { Text = "战力"+d1.CombatPower+" 修为"+d1.CultivationProgress.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextPrimary));
+				lp.AddChild(new Label { Text = "心情"+BarsString(d1.Mood,100,6)+" "+d1.Mood.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d1.Mood<20?UITheme.Crimson:UITheme.TextDim));
+				lp.AddChild(new Label { Text = "体力"+BarsString(d1.CurrentStamina,d1.MaxStamina,6)+" "+d1.CurrentStamina+"/"+d1.MaxStamina, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d1.CurrentStamina<=10?UITheme.TextOrange:UITheme.TextDim));
+				lp.AddChild(new Label { Text = "任务: "+TaskNames[(int)d1.CurrentTask], HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextBlue));
+				if (!string.IsNullOrEmpty(d1.Background)) lp.AddChild(new Label { Text = d1.Background, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, new Color(0.65f,0.55f,0.75f)));
+				bothRow.AddChild(lp);
+
+				// Heart
+				var heartCol = new VBoxContainer { CustomMinimumSize = new Vector2I(40, 0) };
+				var heartFill = new CenterContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+				var heart = new Label { Text = "❤", HorizontalAlignment = HorizontalAlignment.Center };
+				heart.AddThemeFontSizeOverride("font_size", 22); heart.AddThemeColorOverride("font_color", new Color(1,0.35f,0.45f));
+				heartFill.AddChild(heart); heartCol.AddChild(heartFill);
+				bothRow.AddChild(heartCol);
+
+				// -- Right --
+				var rp = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+				var rac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; rac.AddChild(MakeAvatarCircle(d2.IsMale, 44)); rp.AddChild(rac); rp.AddChild(SP(3));
+				rp.AddChild(new Label { Text = (d2.IsMale?"♂":"♀") + " " + d2.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.Gold));
+				rp.AddChild(new Label { Text = d2.FullRealmName, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, RealmColor(d2.Realm)));
+				rp.AddChild(new Label { Text = "天赋"+d2.Talent+" 悟性"+d2.Comprehension, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+				rp.AddChild(new Label { Text = "体质"+d2.Constitution+" 神识"+d2.Spirit, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+				rp.AddChild(new Label { Text = "战力"+d2.CombatPower+" 修为"+d2.CultivationProgress.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextPrimary));
+				rp.AddChild(new Label { Text = "心情"+BarsString(d2.Mood,100,6)+" "+d2.Mood.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d2.Mood<20?UITheme.Crimson:UITheme.TextDim));
+				rp.AddChild(new Label { Text = "体力"+BarsString(d2.CurrentStamina,d2.MaxStamina,6)+" "+d2.CurrentStamina+"/"+d2.MaxStamina, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d2.CurrentStamina<=10?UITheme.TextOrange:UITheme.TextDim));
+				rp.AddChild(new Label { Text = "任务: "+TaskNames[(int)d2.CurrentTask], HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextBlue));
+				if (!string.IsNullOrEmpty(d2.Background)) rp.AddChild(new Label { Text = d2.Background, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, new Color(0.65f,0.55f,0.75f)));
+				bothRow.AddChild(rp);
+				cv.AddChild(bothRow); cv.AddChild(SP(6));
+
+				// Dual cultivation info
+				bool bc = d1.CurrentTask == DiscipleTaskType.Cultivate && d2.CurrentTask == DiscipleTaskType.Cultivate;
+				var dl = new Label { Text = bc ? $"双修加成: +{comp.DualCultivationBonus*100:F0}% (修炼中)" : $"双修加成: +{comp.DualCultivationBonus*100:F0}% (需同修)", HorizontalAlignment = HorizontalAlignment.Center };
+				dl.AddThemeFontSizeOverride("font_size", 11); dl.AddThemeColorOverride("font_color", bc ? UITheme.TextGreen : UITheme.TextDim);
+				cv.AddChild(dl); cv.AddChild(SP(6));
+
+				// Action buttons
+				var br = new HBoxContainer(); var bcr = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; br.AddChild(bcr);
+				int cId = comp.Id;
+				var g1b = SmallBtn("赠丹药"); g1b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.Pill, 1); bcr.AddChild(g1b);
+				bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				var g2b = SmallBtn("赠灵石"); g2b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.SpiritStone, 50); bcr.AddChild(g2b);
+				if (!comp.IsMarried) { bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) }); var mb = SmallBtn("结道缘"); mb.Disabled = comp.Affection < 60; mb.Pressed += () => GM.ProposeMarriage(cId); bcr.AddChild(mb); }
+				bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				var bb = SmallBtn("和离"); bb.Pressed += () => GM.BreakUpCompanion(cId); bcr.AddChild(bb); cv.AddChild(br);
+
+				c.AddChild(card); c.AddChild(SP(8));
+			}
+			c.AddChild(HR()); c.AddChild(SP(4));
+		}
+		else { c.AddChild(TB("尚无道缘。使用下方功能为弟子牵线搭桥。", UITheme.TextDim, 13)); c.AddChild(SP(10)); }
+
+		// Matchmaking
 		c.AddChild(HL("牵线搭桥", 16, UITheme.Gold)); c.AddChild(SP(6));
 		var singles = GM.Disciples.AllDisciples.Where(d => d.CompanionId < 0).ToList(); var males = singles.Where(d => d.IsMale).ToList(); var females = singles.Where(d => !d.IsMale).ToList();
-		if (males.Count == 0 || females.Count == 0) c.AddChild(TB(males.Count + females.Count == 0 ? "暂无单身弟子可牵线。" : "性别比例失衡，需更多异性弟子。", UITheme.TextDim, 12));
-		else { var mr = new HBoxContainer(); mr.AddChild(new Label { Text = "选择两位单身弟子:" }.WithFont(12, UITheme.TextPrimary)); _matchMaleDrop = new OptionButton(); foreach (var m in males) _matchMaleDrop.AddItem($"♂{m.Name} ({m.FullRealmName})"); mr.AddChild(_matchMaleDrop); mr.AddChild(new Label { Text = " + " }.WithFont(13, UITheme.Gold)); _matchFemaleDrop = new OptionButton(); foreach (var f in females) _matchFemaleDrop.AddItem($"♀{f.Name} ({f.FullRealmName})"); mr.AddChild(_matchFemaleDrop); var ib = SmallBtn("牵线"); ib.Pressed += () => { if (_matchMaleDrop.Selected < 0 || _matchFemaleDrop.Selected < 0) return; GM.IntroduceCompanions(males[_matchMaleDrop.Selected].Id, females[_matchFemaleDrop.Selected].Id); }; mr.AddChild(ib); c.AddChild(mr); c.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 4) }); c.AddChild(TB("成功率受境界相近度、属性互补、年龄相仿、忠诚度影响。", UITheme.TextDim, 11)); }
+		if (males.Count == 0 || females.Count == 0) c.AddChild(TB(males.Count+females.Count == 0 ? "暂无单身弟子。" : "性别比例失衡。", UITheme.TextDim, 12));
+		else {
+			var mr = new HBoxContainer(); var mcc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; mr.AddChild(mcc);
+			mcc.AddChild(new Label { Text = "选择两位单身弟子:" }.WithFont(12, UITheme.TextPrimary));
+			mcc.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			_matchMaleDrop = new OptionButton(); foreach (var m in males) _matchMaleDrop.AddItem("♂"+m.Name+" ("+m.FullRealmName+")"); mcc.AddChild(_matchMaleDrop);
+			mcc.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			mcc.AddChild(new Label { Text = "+" }.WithFont(14, UITheme.Gold));
+			mcc.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			_matchFemaleDrop = new OptionButton(); foreach (var f in females) _matchFemaleDrop.AddItem("♀"+f.Name+" ("+f.FullRealmName+")"); mcc.AddChild(_matchFemaleDrop);
+			mcc.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
+			var ib = SmallBtn("牵线"); ib.Pressed += () => { if (_matchMaleDrop.Selected < 0 || _matchFemaleDrop.Selected < 0) return; GM.IntroduceCompanions(males[_matchMaleDrop.Selected].Id, females[_matchFemaleDrop.Selected].Id); }; mcc.AddChild(ib);
+			c.AddChild(mr); c.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 4) });
+			c.AddChild(TB("成功率受境界相近度、属性互补、年龄相仿、忠诚度影响。", UITheme.TextDim, 11));
+		}
 	}
 
 	// ===================== TAB: QUESTS (5) =====================
