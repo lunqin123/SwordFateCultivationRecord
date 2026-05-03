@@ -566,7 +566,7 @@ public partial class MainUI : Control
 	void RefreshLog()
 	{
 		var c = _tabContents[6]; c.FreeChildren(); c.AddChild(HL("宗门记事", 18, UITheme.Gold)); c.AddChild(SP(8));
-		var entries = GM.EventLogEntries; var sbl = new System.Text.StringBuilder();
+		var entries = GM.EventLogEntries; var sbl = new System.Text.StringBuilder(); sbl.AppendLine("【宗门记事卷】"); if (entries != null && entries.Count > 0) { sbl.AppendLine("(共" + entries.Count + "条)"); int lastDay = -1; foreach (var e in entries) { if (e.Day != lastDay) { sbl.AppendLine("—— 第" + e.Day + "日 ——"); lastDay = e.Day; } sbl.AppendLine("    " + e.Message); } } else sbl.AppendLine("宗门初立，尚无记事。推演天时以记录宗门变迁。");
 		if (entries != null && entries.Count > 0) { int lastDay = -1; foreach (var e in entries) { if (e.Day != lastDay) { sbl.AppendLine($"—— 第{e.Day}日 ——"); lastDay = e.Day; } sbl.AppendLine($"    {e.Message}"); } }
 		else sbl.AppendLine("宗门初立，尚无记事。推演天时以记录宗门变迁。");
 		var ll = new Label { Text = sbl.ToString(), AutowrapMode = TextServer.AutowrapMode.WordSmart, SizeFlagsVertical = SizeFlags.ExpandFill }; ll.AddThemeFontSizeOverride("font_size", 12); ll.AddThemeColorOverride("font_color", UITheme.TextPrimary); var ls = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; ls.AddChild(ll); c.AddChild(ls);
