@@ -105,4 +105,62 @@ public static class DiscipleNameTable
         int s = Math.Clamp(remaining + 20, 20, 100);
         return (t, co, cn, s);
     }
+
+    // ===== Background / Personality / Trait Generation =====
+
+    private static readonly (string name, int talentBias, int compBias, int constBias, int spiritBias)[] _backgrounds =
+    {
+        ("农家子弟",       0,  0, +15,  0),
+        ("书香门第",       0, +15,  0,  0),
+        ("武道世家",     +15,  0,  0,  0),
+        ("商贾之后",       0,  0,  0, +15),
+        ("猎户之子",     +10,  0, +10,  0),
+        ("医道世家",       0, +10,  0, +10),
+        ("没落贵族",     +5, +5,  0,  0),
+        ("深山隐修",     +5,  0,  0, +10),
+        ("渔家少年",       0,  0, +5, +5),
+        ("铁匠传人",     +10,  0, +5,  0),
+        ("流浪孤儿",       0,  0,  0,  0),
+        ("镖师之后",       0,  0, +10,  0),
+        ("画师门第",       0, +10,  0, +5),
+        ("乐师世家",       0, +5,  0, +10),
+        ("方士传人",       0, +5, +5, +5),
+    };
+
+    private static readonly string[] _personalities =
+    {
+        "沉稳持重", "机敏灵动", "坚韧不拔", "温润如玉",
+        "孤傲清高", "豪爽豁达", "内敛沉静", "争强好胜",
+        "随遇而安", "野心勃勃", "谦逊和善", "冷峻寡言",
+        "活泼开朗", "心思缜密", "刚正不阿", "洒脱不羁",
+    };
+
+    private static readonly string[] _traits =
+    {
+        "过目不忘", "天生神力", "剑心通明", "灵觉敏锐",
+        "道心坚定", "巧手匠心", "福缘深厚", "百折不挠",
+        "无", "无", "无", "无",  // 40% chance of no special trait
+    };
+
+    public static (string bg, string pers, string trait) GenerateFlavor()
+    {
+        var bg = _backgrounds[_rng.Next(_backgrounds.Length)];
+        string pers = _personalities[_rng.Next(_personalities.Length)];
+        string trait = _traits[_rng.Next(_traits.Length)];
+        return (bg.name, pers, trait);
+    }
+
+    /// <summary>Adjust stats based on background bias, then clamp.</summary>
+    public static (int t, int co, int cn, int s) ApplyBackgroundBias(
+        int t, int co, int cn, int s, string bgName)
+    {
+        var bg = _backgrounds.FirstOrDefault(b => b.name == bgName);
+        if (bg.name == null) return (t, co, cn, s);
+        return (
+            Math.Clamp(t + bg.talentBias, 15, 100),
+            Math.Clamp(co + bg.compBias,  15, 100),
+            Math.Clamp(cn + bg.constBias, 15, 100),
+            Math.Clamp(s  + bg.spiritBias, 15, 100)
+        );
+    }
 }

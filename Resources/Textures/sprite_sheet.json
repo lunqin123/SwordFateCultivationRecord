@@ -1,0 +1,557 @@
+{
+  "frames": {
+	"主界面": {
+	  "frame": {
+		"x": 2,
+		"y": 2,
+		"w": 1408,
+		"h": 768
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 1408,
+		"h": 768
+	  },
+	  "sourceSize": {
+		"w": 1408,
+		"h": 768
+	  }
+	},
+	"女头像": {
+	  "frame": {
+		"x": 2,
+		"y": 774,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "sourceSize": {
+		"w": 1024,
+		"h": 1024
+	  }
+	},
+	"男头像": {
+	  "frame": {
+		"x": 2,
+		"y": 1802,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "sourceSize": {
+		"w": 1024,
+		"h": 1024
+	  }
+	},
+	"男女修仙者": {
+	  "frame": {
+		"x": 2,
+		"y": 2830,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 1024,
+		"h": 1024
+	  },
+	  "sourceSize": {
+		"w": 1024,
+		"h": 1024
+	  }
+	},
+	"透明底图/256-256": {
+	  "frame": {
+		"x": 1030,
+		"y": 774,
+		"w": 256,
+		"h": 256
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 256,
+		"h": 256
+	  },
+	  "sourceSize": {
+		"w": 256,
+		"h": 256
+	  }
+	},
+	"丹房": {
+	  "frame": {
+		"x": 2,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"丹药": {
+	  "frame": {
+		"x": 134,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"会客厅": {
+	  "frame": {
+		"x": 266,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"法器": {
+	  "frame": {
+		"x": 398,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"演武场": {
+	  "frame": {
+		"x": 530,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"灵气": {
+	  "frame": {
+		"x": 662,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"灵田": {
+	  "frame": {
+		"x": 794,
+		"y": 3858,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"灵石": {
+	  "frame": {
+		"x": 1030,
+		"y": 1034,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"灵草": {
+	  "frame": {
+		"x": 1030,
+		"y": 1166,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"炼药房": {
+	  "frame": {
+		"x": 1030,
+		"y": 1298,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"矿石": {
+	  "frame": {
+		"x": 1030,
+		"y": 1430,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"矿脉": {
+	  "frame": {
+		"x": 1030,
+		"y": 1562,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"膳堂": {
+	  "frame": {
+		"x": 1414,
+		"y": 2,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"藏经阁": {
+	  "frame": {
+		"x": 1546,
+		"y": 2,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"贡献": {
+	  "frame": {
+		"x": 1414,
+		"y": 134,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"阵法殿": {
+	  "frame": {
+		"x": 1678,
+		"y": 2,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"静修室": {
+	  "frame": {
+		"x": 1414,
+		"y": 266,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"透明底图/128-128": {
+	  "frame": {
+		"x": 1810,
+		"y": 2,
+		"w": 128,
+		"h": 128
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 128,
+		"h": 128
+	  },
+	  "sourceSize": {
+		"w": 128,
+		"h": 128
+	  }
+	},
+	"透明底图/64-64": {
+	  "frame": {
+		"x": 926,
+		"y": 3858,
+		"w": 64,
+		"h": 64
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 64,
+		"h": 64
+	  },
+	  "sourceSize": {
+		"w": 64,
+		"h": 64
+	  }
+	},
+	"透明底图/32-32": {
+	  "frame": {
+		"x": 994,
+		"y": 3858,
+		"w": 32,
+		"h": 32
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 32,
+		"h": 32
+	  },
+	  "sourceSize": {
+		"w": 32,
+		"h": 32
+	  }
+	},
+	"透明底图/16-16": {
+	  "frame": {
+		"x": 994,
+		"y": 3894,
+		"w": 16,
+		"h": 16
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 16,
+		"h": 16
+	  },
+	  "sourceSize": {
+		"w": 16,
+		"h": 16
+	  }
+	},
+	"透明底图/8-8": {
+	  "frame": {
+		"x": 994,
+		"y": 3914,
+		"w": 8,
+		"h": 8
+	  },
+	  "rotated": false,
+	  "trimmed": false,
+	  "spriteSourceSize": {
+		"x": 0,
+		"y": 0,
+		"w": 8,
+		"h": 8
+	  },
+	  "sourceSize": {
+		"w": 8,
+		"h": 8
+	  }
+	}
+  },
+  "meta": {
+	"image": "sprite_sheet.png",
+	"size": {
+	  "w": 4096,
+	  "h": 4096
+	},
+	"scale": "1",
+	"format": "RGBA8888",
+	"pivot": {
+	  "x": 0.5,
+	  "y": 0.5
+	}
+  }
+}

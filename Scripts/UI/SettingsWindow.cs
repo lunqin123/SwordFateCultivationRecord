@@ -19,7 +19,7 @@ public partial class SettingsWindow : Window
         OnSave = onSave;
         OnLoad = onLoad;
         OnMainMenu = onMainMenu;
-        Title = "设置";
+        Title = "宗门设置";
         Size = new Vector2I(440, 420);
         Visible = false;
         Exclusive = true;
@@ -52,7 +52,7 @@ public partial class SettingsWindow : Window
         resetBtn.Pressed += () => { GameSettings.ResetDefaults(); RefreshAll(); };
         btnRow.AddChild(resetBtn);
         btnRow.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
-        var closeBtn = SmlBtn("关闭");
+        var closeBtn = SmlBtn("合上");
         closeBtn.Pressed += Hide;
         btnRow.AddChild(closeBtn);
         btnRow.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
@@ -144,9 +144,9 @@ public partial class SettingsWindow : Window
             tab.AddChild(Section("存档管理"));
             tab.AddChild(SP(4));
         }
-        if (OnSave != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("保存游戏"); b.Pressed += () => { Hide(); OnSave?.Invoke(); }; cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
-        if (OnLoad != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("载入游戏"); b.Pressed += () => { Hide(); OnLoad?.Invoke(); }; cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
-        if (OnMainMenu != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("返回主菜单"); b.Pressed += () => OnMainMenu?.Invoke(); cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
+        if (OnSave != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("存录宗门"); b.Pressed += () => { Hide(); OnSave?.Invoke(); }; cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
+        if (OnLoad != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("开卷"); b.Pressed += () => { Hide(); OnLoad?.Invoke(); }; cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
+        if (OnMainMenu != null) { var cc = new CenterContainer { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill }; var b = BigBtn("归返山门"); b.Pressed += () => OnMainMenu?.Invoke(); cc.AddChild(b); tab.AddChild(cc); tab.AddChild(SP(3)); }
         tab.AddChild(SP(6));
 
         tab.AddChild(Note("「剑缘修仙录」v1.0\nGodot 4.5 Mono · C#\n字体: 马善政毛笔楷书 (SIL OFL 1.1)"));

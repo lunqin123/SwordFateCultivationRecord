@@ -9,6 +9,15 @@ public class DiscipleSystem
     public IReadOnlyList<DiscipleData> AllDisciples => _disciples;
     public int Count => _disciples.Count;
 
+    /// <summary>Admit a pre-generated disciple into the sect.</summary>
+    public DiscipleData Admit(DiscipleData candidate)
+    {
+        candidate.Id = _nextId++;
+        _disciples.Add(candidate);
+        EventBus.EmitDiscipleRecruited(candidate);
+        return candidate;
+    }
+
     public void AddChildDisciple(DiscipleData child)
     {
         child.Id = _nextId++;
@@ -19,6 +28,9 @@ public class DiscipleSystem
     public DiscipleData Recruit(string? name = null)
     {
         var (talent, comprehension, constitution, spirit) = DiscipleNameTable.GenerateStats();
+        var (bg, pers, trait) = DiscipleNameTable.GenerateFlavor();
+        (talent, comprehension, constitution, spirit) =
+            DiscipleNameTable.ApplyBackgroundBias(talent, comprehension, constitution, spirit, bg);
         bool isMale = _rng.Next(2) == 0;
         var disciple = new DiscipleData
         {
@@ -32,10 +44,39 @@ public class DiscipleSystem
             Realm = CultivationRealm.Mortal,
             IsMale = isMale,
             SpiritRoot = RollSpiritRoot(false),
+            Background = bg,
+            Personality = pers,
+            Trait = trait,
         };
         _disciples.Add(disciple);
         EventBus.EmitDiscipleRecruited(disciple);
         return disciple;
+    }
+
+    /// <summary>Generate a candidate without adding to roster (for recruitment selection UI).</summary>
+    public DiscipleData GenerateCandidate()
+    {
+        var (talent, comprehension, constitution, spirit) = DiscipleNameTable.GenerateStats();
+        var (bg, pers, trait) = DiscipleNameTable.GenerateFlavor();
+        (talent, comprehension, constitution, spirit) =
+            DiscipleNameTable.ApplyBackgroundBias(talent, comprehension, constitution, spirit, bg);
+        bool isMale = _rng.Next(2) == 0;
+        return new DiscipleData
+        {
+            Id = -1, // not yet recruited
+            Name = DiscipleNameTable.GenerateName(isMale),
+            Age = _rng.Next(14, 25),
+            Talent = talent,
+            Comprehension = comprehension,
+            Constitution = constitution,
+            Spirit = spirit,
+            Realm = CultivationRealm.Mortal,
+            IsMale = isMale,
+            SpiritRoot = RollSpiritRoot(false),
+            Background = bg,
+            Personality = pers,
+            Trait = trait,
+        };
     }
 
     public bool Dismiss(int discipleId)
@@ -111,8 +152,21 @@ public class DiscipleSystem
             // Rest: recover stamina, skip other processing
             if (d.CurrentTask == DiscipleTaskType.Rest)
             {
-                d.CurrentStamina = Math.Min(d.MaxStamina, d.CurrentStamina + 20);
-                d.Mood = Math.Min(100, d.Mood + 2);
+                double restBonus = facilities != null
+                    ? FacilityTable.GetTotalTaskBonus(DiscipleTaskType.Rest, facilities)
+                    : 0;
+                int staminaRec = 35 + (int)(35 * restBonus);
+                int moodRec = 20 + (int)(20 * restBonus);
+                d.CurrentStamina = Math.Min(d.MaxStamina, d.CurrentStamina + staminaRec);
+                d.Mood = Math.Min(100, d.Mood + moodRec);
+                continue;
+            }
+
+            // Auto-rest: if stamina too low, force rest instead
+            if (d.CurrentStamina < 10)
+            {
+                d.CurrentStamina = Math.Min(d.MaxStamina, d.CurrentStamina + 30);
+                d.Mood = Math.Min(100, d.Mood + 12);
                 continue;
             }
 
@@ -129,12 +183,12 @@ public class DiscipleSystem
             if (d.CurrentStamina <= 0)
             {
                 d.CurrentStamina = 0;
-                d.Mood = Math.Max(0, d.Mood - 5);
+                d.Mood = Math.Max(0, d.Mood - 1);
                 continue;
             }
 
             // Mood naturally drifts toward 50
-            d.Mood += (50 - d.Mood) * 0.02;
+            d.Mood += (50 - d.Mood) * 0.12;
             d.Mood = Math.Clamp(d.Mood, 0, 100);
 
             double bonus = 1.0 + taskBonus[(int)d.CurrentTask];
@@ -145,7 +199,7 @@ public class DiscipleSystem
             switch (d.CurrentTask)
             {
                 case DiscipleTaskType.Cultivate:
-                    d.TotalContribution++;
+                    d.TotalContribution += 3;
                     double compBonus = companionCultivationBonus?.GetValueOrDefault(d.Id, 0) ?? 0;
                     ProcessCultivate(d, bonus, compBonus);
                     TryLearnSkill(d, SkillIdCultivate);
@@ -206,10 +260,9 @@ public class DiscipleSystem
 
             // Departure risk
             double risk = 0;
-            if (d.ConsecutiveLowMoodDays >= 3) risk += 0.08; // 8% per day after 3 days of low mood
-            if (d.Loyalty < 15) risk += 0.05;
-            if (d.ConsecutiveLowMoodDays >= 3 && d.Loyalty < 15) risk += 0.12;
-            if (d.ConsecutiveLowMoodDays >= 7) risk = 0.3; // 30% after a week of misery
+            if (d.ConsecutiveLowMoodDays >= 5) risk += 0.03; // 3% after 5 days of low mood
+            if (d.Loyalty < 10) risk += 0.02;
+            if (d.ConsecutiveLowMoodDays >= 10) risk = 0.10; // 10% after 10 days
 
             if (risk > 0 && _rng.NextDouble() < risk)
             {
@@ -219,7 +272,7 @@ public class DiscipleSystem
                     : d.ConsecutiveLowMoodDays >= 3
                     ? $"{d.Name}因心情持续低落，决定离开宗门另寻出路。"
                     : $"{d.Name}对宗门失去了忠诚，不告而别。";
-                EventBus.EmitNotification("弟子出走", reason);
+                EventBus.EmitNotification("弟子离去", reason);
             }
         }
         foreach (var d in toRemove)
@@ -371,7 +424,7 @@ public class DiscipleSystem
     private void ProcessTeach(DiscipleData d, double bonus = 1.0)
     {
         double skTeach = SkillBonus(d, 6, 0.10);
-        double boost = (2 + d.EffComprehension * 0.1 + d.EffTalent * 0.05) * bonus * skTeach;
+        double boost = (2 + d.EffComprehension * 0.06 + d.EffTalent * 0.04) * bonus * skTeach;
         foreach (var other in _disciples)
         {
             if (other.Id == d.Id) continue;
@@ -383,11 +436,11 @@ public class DiscipleSystem
     /// <summary>Guard: protect the sect, gain power and small spirit stones.</summary>
     private int ProcessGuard(DiscipleData d, double bonus = 1.0)
     {
-        int power = (int)((1 + d.CombatPower / 200.0) * bonus);
+        int power = (int)((10 + d.CombatPower / 40.0) * bonus);
         d.TaskProgress += power;
-        if (d.TaskProgress >= 30)
+        if (d.TaskProgress >= 60)
         {
-            d.TaskProgress -= 30;
+            d.TaskProgress -= 60;
             d.Loyalty = Math.Min(100, d.Loyalty + 2);
         }
         return power;
@@ -438,10 +491,18 @@ public class DiscipleSystem
     {
         var info = CultivationTable.GetInfo(d.Realm);
 
+        // Breakthrough costs both spirit stones and spirit essence at higher realms
         if (!resources.Spend(ResourceType.SpiritStone, info.BreakthroughCost))
         {
             d.IsInBreakthrough = false;
             d.Mood = Math.Max(0, d.Mood - 10);
+            return;
+        }
+        int essenceCost = (int)d.Realm switch { <= 2 => 0, 3 => 30, 4 => 80, 5 => 200, 6 => 500, _ => 1000 };
+        if (essenceCost > 0 && !resources.Spend(ResourceType.SpiritEssence, essenceCost))
+        {
+            d.IsInBreakthrough = false;
+            d.Mood = Math.Max(0, d.Mood - 5);
             return;
         }
 
@@ -468,7 +529,7 @@ public class DiscipleSystem
             d.BreakthroughProgress += info.BreakthroughRequiredProgress * 0.1;
             d.Mood = Math.Max(0, d.Mood - 15);
             d.Health = Math.Max(1, d.Health - 10);
-            if (_rng.NextDouble() < 0.2)
+            if (_rng.NextDouble() < 0.10)
             {
                 if (d.RealmLayer > 1) d.RealmLayer--;
                 else if (d.Realm > CultivationRealm.Mortal)

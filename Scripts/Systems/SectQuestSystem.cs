@@ -28,7 +28,7 @@ public class SectQuestSystem
             {
                 q.Completed = true;
                 GrantReward(q, gm);
-                EventBus.EmitNotification("任务完成", $"宗门任务「{q.Title}」已完成！\n奖励: {q.RewardText}");
+                EventBus.EmitNotification("宗门令达成", $"宗门任务「{q.Title}」已完成！\n奖励: {q.RewardText}");
             }
         }
     }
@@ -118,7 +118,7 @@ public class SectQuestSystem
                 break;
             case QuestType.UpgradeFacilities:
                 target = 1 + _rng.Next(2); // 1-2
-                title = $"设施升级";
+                title = $"灵筑晋升";
                 desc = $"将{target}座设施升至Lv.2以上";
                 repReward = 30 * target;
                 rewards[ResourceType.SpiritEssence] = 20 * target;

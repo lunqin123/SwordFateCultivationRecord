@@ -25,6 +25,10 @@ public partial class GameManager : Node
 	public bool IsInitialized { get; private set; }
 	public EventData? PendingEvent { get; private set; }
 
+	// 入门大比
+	public int RecruitTournamentDays { get; private set; } = -1; // -1 = 未安排
+	public List<DiscipleData>? PendingRecruitCandidates { get; private set; }
+
 	private readonly Random _rng = new();
 	private readonly List<DiscipleData> _pendingNewborns = new();
 	public List<LogEntry> EventLogEntries { get; set; } = new();
@@ -59,6 +63,9 @@ public partial class GameManager : Node
 		EventBus.Clear();
 		AudioManager.ConnectEvents();
 		EventBus.ChildBorn += (child, _, _) => _pendingNewborns.Add(child);
+		EventBus.DiscipleRecruited += d => LogEvent($"{d.Name}加入宗门");
+		EventBus.BreakthroughSuccess += d => LogEvent($"{d.Name}成功突破至{d.FullRealmName}！");
+		EventBus.BreakthroughFailed += d => LogEvent($"{d.Name}突破失败，修为受损");
 		EventBus.YearPassed += ShowYearSummary;
 		EventBus.DiscipleDeparted += OnDiscipleDeparted;
 		Time = new TimeSystem();
@@ -76,34 +83,45 @@ public partial class GameManager : Node
 		SectPower = 0;
 		MaxDisciples = MaxDiscPerLevel[0];
 		PendingEvent = null;
+		RecruitTournamentDays = -1;
+		PendingRecruitCandidates = null;
 		EventLogEntries.Clear();
 		_pendingNewborns.Clear();
 		// Starting equipment
 		AllEquipment.Add(new EquipmentData { Id = 1, Name = "铁剑", Quality = EquipmentQuality.Common, Description = "宗门传承的铁剑", CombatBonus = 5 });
 		AllEquipment.Add(new EquipmentData { Id = 2, Name = "静心蒲团", Quality = EquipmentQuality.Common, Description = "辅助修炼的蒲团", CultivationSpeedBonus = 0.05 });
 		for (int i = 0; i < 3; i++) Disciples.Recruit();
+		LogEvent($"宗门「{SectName}」于第{Time.Year}年创立");
 		IsInitialized = true;
+	}
+
+	/// <summary>Record an event in the sect chronicle (max 300 entries).</summary>
+	public void LogEvent(string message)
+	{
+		EventLogEntries.Add(new LogEntry { Title = "记事", Message = message, Day = Time.Day });
+		if (EventLogEntries.Count > 300) EventLogEntries.RemoveAt(0);
 	}
 
 	// ====== Daily Pipeline ======
 
 	public void AdvanceTime(int days)
 	{
-		if (!IsInitialized || PendingEvent != null) return;
+		if (!IsInitialized || PendingEvent != null || PendingRecruitCandidates != null) return;
 		for (int i = 0; i < days; i++)
 		{
 			RunDailyCycle();
-			if (PendingEvent != null) return;
+			if (PendingEvent != null || PendingRecruitCandidates != null) return;
 			if (CheckGameOver()) return;
 		}
 	}
 
 	public void FastForward(int days)
 	{
-		if (!IsInitialized || PendingEvent != null) return;
+		if (!IsInitialized || PendingEvent != null || PendingRecruitCandidates != null) return;
 		for (int i = 0; i < days; i++)
 		{
 			RunDailyCycle(isFastForward: true);
+			if (PendingEvent != null || PendingRecruitCandidates != null) return;
 			if (CheckGameOver()) return;
 		}
 	}
@@ -116,46 +134,57 @@ public partial class GameManager : Node
 		Resources.ApplyDailyIncome();
 		// 3. Companions: affection, mood, and dual cultivation bonuses
 		var compBonus = Companions.ProcessDaily(Disciples.AllDisciples.ToList(), Time.GetTotalDays());
-		// 4. Disciples: task effects + stamina (returns sect power from Guard)
+		// 4. Disciples: task effects + stamina
 		int powerGain = Disciples.ProcessDaily(Resources, Facilities.AllFacilities, SectLevel, compBonus);
 		SectPower += powerGain;
 		AllEquipment.AddRange(Disciples.NewEquipmentToday);
 
-		// Handle newborns from companions
 		HandleNewborns();
 
 		// 5. Event cooldowns
 		Events.ProcessCooldowns();
 
-		// 5. Auto-recruit based on reputation (5% base chance per day)
+		// 6. 入门大比 countdown
+		if (RecruitTournamentDays > 0)
+		{
+			RecruitTournamentDays--;
+			if (RecruitTournamentDays == 0)
+			{
+				// Tournament ends — generate quality candidates based on reputation
+				PendingRecruitCandidates = GenerateRecruitCandidates(SectReputation);
+				EventBus.EmitRecruitSelectionReady(PendingRecruitCandidates);
+				return; // Pause daily cycle until player selects
+			}
+		}
+
+		// 7. Auto-recruit
 		if (_rng.NextDouble() < 0.08 * (1 + SectReputation / 200.0) && Disciples.Count < MaxDisciples)
 		{
 			var d = Disciples.Recruit();
-			EventBus.EmitNotification("宗门动态", $"散人{d.Name}仰慕宗门声望，前来投奔！");
+			EventBus.EmitNotification("宗门谕令", $"散人{d.Name}仰慕宗门声望，前来投奔！");
 		}
 
-		// 6. Sect level check
+		// 8. Sect level check
 		CheckSectLevelUp();
 
-		// Quest progress check
 		Quests.CheckProgress(this);
 		Quests.RefreshCompleted(this);
 
-		// 7. Advance day first, then try random event
+		// 9. Advance day
 		Time.AdvanceDay();
+		// Log daily income summary every 5 days
+		if (Time.Day % 5 == 0) LogEvent(DailySummary());
 
-		// Auto-save
 		if (GameSettings.AutoSave && Time.GetTotalDays() % GameSettings.AutoSaveInterval == 0)
 			SaveGame(9);
 
-		// 8. Random event (skip during fast-forward)
+		// 10. Random event (skip during fast-forward)
 		if (!isFastForward)
 		{
 			PendingEvent = Events.TryTriggerEvent(SectLevel);
 			if (PendingEvent != null)
 			{
 				EventBus.EmitEventChoiceRequired(PendingEvent);
-				// Don't advance day again — DayPassed already fired above
 			}
 		}
 	}
@@ -168,6 +197,7 @@ public partial class GameManager : Node
 		if (SectReputation >= LevelReq[SectLevel])
 		{
 			SectLevel++;
+		LogEvent($"宗门晋升至Lv.{SectLevel}，弟子名额增至{MaxDisciples}人");
 			MaxDisciples = SectLevel <= MaxDiscPerLevel.Length
 				? MaxDiscPerLevel[SectLevel - 1]
 				: MaxDiscPerLevel[^1] + (SectLevel - MaxDiscPerLevel.Length) * 10;
@@ -175,37 +205,109 @@ public partial class GameManager : Node
 		}
 	}
 
-	// ====== Player Actions (each costs 1 day) ======
+	// ====== 入门大比 ======
 
-	public void RecruitDisciple()
+	/// <summary>Start a 7-day entrance tournament. Candidates appear after countdown.</summary>
+	public void ScheduleRecruitTournament()
 	{
 		if (!IsInitialized) return;
 		if (Disciples.Count >= MaxDisciples)
 		{
-			EventBus.EmitNotification("提示", $"弟子已满（上限{MaxDisciples}人）");
+			EventBus.EmitNotification("启禀", $"弟子已满（上限{MaxDisciples}人）");
 			return;
 		}
-		Disciples.Recruit();
-		EventBus.EmitNotification("宗门动态", "新弟子加入宗门！");
+		if (RecruitTournamentDays > 0)
+		{
+			EventBus.EmitNotification("启禀", $"入门大比正在进行中（剩余{RecruitTournamentDays}天）");
+			return;
+		}
+		RecruitTournamentDays = 7;
+		EventBus.EmitNotification("宗门谕令", "已发出入门大比公告，七日后举行选拔！");
 		AdvanceTime(1);
 	}
+
+	/// <summary>Generate candidates with quality scaled by sect reputation.</summary>
+	private List<DiscipleData> GenerateRecruitCandidates(int reputation)
+	{
+		var candidates = new List<DiscipleData>();
+		int count = reputation >= 1000 ? 7 : reputation >= 500 ? 6 : 5;
+
+		for (int i = 0; i < count; i++)
+		{
+			var d = Disciples.GenerateCandidate();
+
+			// Reputation-based quality boost
+			if (reputation >= 100)
+			{
+				// Boost one random stat
+				int boost = reputation >= 800 ? 15 : reputation >= 400 ? 10 : reputation >= 150 ? 5 : 3;
+				switch (_rng.Next(4))
+				{
+					case 0: d.Talent = Math.Min(100, d.Talent + boost); break;
+					case 1: d.Comprehension = Math.Min(100, d.Comprehension + boost); break;
+					case 2: d.Constitution = Math.Min(100, d.Constitution + boost); break;
+					case 3: d.Spirit = Math.Min(100, d.Spirit + boost); break;
+				}
+			}
+
+			// Higher reputation → better spiritual root odds
+			if (reputation >= 300 && d.SpiritRoot >= SpiritualRoot.ThreeElement)
+			{
+				// Reroll chance for better root
+				if (_rng.NextDouble() < (reputation >= 1000 ? 0.30 : reputation >= 600 ? 0.15 : 0.05))
+					d.SpiritRoot = RollBetterRoot(d.SpiritRoot);
+			}
+
+			candidates.Add(d);
+		}
+		return candidates;
+	}
+
+	private SpiritualRoot RollBetterRoot(SpiritualRoot current)
+	{
+		// Upgrade to next tier with some randomness
+		return current switch
+		{
+			SpiritualRoot.ThreeElement => _rng.Next(2) == 0 ? SpiritualRoot.DualElement : SpiritualRoot.Special,
+			SpiritualRoot.DualElement => _rng.Next(3) == 0 ? SpiritualRoot.SingleElement : SpiritualRoot.DualElement,
+			SpiritualRoot.SingleElement => _rng.Next(4) == 0 ? SpiritualRoot.Heavenly : SpiritualRoot.SingleElement,
+			_ => current,
+		};
+	}
+
+	public void ConfirmRecruit(DiscipleData candidate)
+	{
+		if (!IsInitialized || candidate == null) return;
+		Disciples.Admit(candidate);
+		LogEvent($"{candidate.Name}通过入门大比，正式加入宗门");
+		PendingRecruitCandidates = null;
+		EventBus.EmitNotification("宗门谕令", $"{candidate.Name}通过入门大比，正式加入宗门！");
+		AdvanceTime(1);
+	}
+
+	public void CancelRecruit()
+	{
+		PendingRecruitCandidates = null;
+	}
+
+	// ====== Player Actions ======
 
 	public void StartBuild(FacilityType type)
 	{
 		if (!IsInitialized) return;
 		var info = FacilityTable.GetInfo(type);
-		// Limit facilities by sect level
 		int maxFacilities = SectLevel * 2;
 		if (Facilities.Count >= maxFacilities)
 		{
 			AudioManager.PlayClose();
-			EventBus.EmitNotification("提示", $"设施已达上限（Lv.{SectLevel}最多{maxFacilities}座）");
+			EventBus.EmitNotification("启禀", $"设施已达上限（Lv.{SectLevel}最多{maxFacilities}座）");
 			return;
 		}
 		if (!Resources.Spend(ResourceType.SpiritStone, info.BaseBuildCost)) return;
 		Facilities.Build(type);
+			LogEvent($"开始营造{info.Name}（{info.BaseBuildCost}灵石）");
 		AudioManager.PlayBuild();
-		EventBus.EmitNotification("宗门动态", $"开始建造{info.Name}");
+		EventBus.EmitNotification("宗门谕令", $"开始建造{info.Name}");
 		AdvanceTime(1);
 	}
 
@@ -219,8 +321,9 @@ public partial class GameManager : Node
 		if (!Resources.Spend(ResourceType.SpiritStone, cost)) return;
 
 		Facilities.StartUpgrade(facilityId, Resources);
+			LogEvent($"开始升级{f.TypeName}至Lv.{f.Level + 1}");
 		AudioManager.PlayUpgrade();
-		EventBus.EmitNotification("宗门动态", $"开始升级{f.TypeName}至Lv.{f.Level + 1}，消耗{cost}灵石");
+		EventBus.EmitNotification("宗门谕令", $"开始升级{f.TypeName}至Lv.{f.Level + 1}，消耗{cost}灵石");
 		AdvanceTime(1);
 	}
 
@@ -242,7 +345,7 @@ public partial class GameManager : Node
 		}
 		Disciples.Dismiss(id);
 		SectReputation = Math.Max(0, SectReputation - 5);
-		EventBus.EmitNotification("宗门动态", $"弟子{d.Name}离开了宗门（声望-5）");
+		EventBus.EmitNotification("宗门谕令", $"弟子{d.Name}离开了宗门（声望-5）");
 		AdvanceTime(1);
 	}
 
@@ -250,7 +353,6 @@ public partial class GameManager : Node
 	{
 		if (!IsInitialized) return;
 		Disciples.AssignTask(discipleId, task, targetId);
-		// Task assignment is instant, does not consume time
 	}
 
 	public void NextDay() => AdvanceTime(1);
@@ -274,7 +376,7 @@ public partial class GameManager : Node
 	{
 		if (Disciples.Count == 0)
 		{
-			EventBus.EmitNotification("宗门覆灭", "所有弟子都已离去，宗门名存实亡...");
+			EventBus.EmitNotification("宗门倾覆", "所有弟子都已离去，宗门名存实亡...");
 			return true;
 		}
 		return false;
@@ -322,7 +424,7 @@ public partial class GameManager : Node
 		};
 		Companions.GiveGift(companionId, boost);
 		AudioManager.PlayClick();
-		EventBus.EmitNotification("赠礼传情", $"赠送了礼物，道侣间的情谊更加深厚了。");
+		EventBus.EmitNotification("赠礼传情", $"赠送了礼物，道缘之间的情谊更加深厚了。");
 		AdvanceTime(1);
 	}
 
@@ -342,7 +444,6 @@ public partial class GameManager : Node
 		var eq = AllEquipment.FirstOrDefault(e => e.Id == equipmentId);
 		var d = Disciples.Get(discipleId);
 		if (eq == null || d == null || eq.EquippedById >= 0) return false;
-		// Unequip existing item of same type? For simplicity, allow 2 items max
 		if (d.EquipmentIds.Count >= 2) return false;
 		eq.EquippedById = discipleId;
 		d.EquipmentIds.Add(equipmentId);
@@ -383,6 +484,7 @@ public partial class GameManager : Node
 
 	void OnDiscipleDeparted(DiscipleData d)
 	{
+		LogEvent($"{d.Name}离开了宗门（声望-5）");
 		if (d.CompanionId >= 0)
 		{
 			var comp = Companions.Get(d.CompanionId);
@@ -394,6 +496,15 @@ public partial class GameManager : Node
 			}
 			Companions.RemoveCompanion(d.CompanionId);
 		}
+	}
+
+
+	string DailySummary()
+	{
+		int spirit = Resources.Get(ResourceType.SpiritStone);
+		int herbs = Resources.Get(ResourceType.Herb);
+		int ore = Resources.Get(ResourceType.Ore);
+		return $"是日：灵石{spirit}，灵草{herbs}，矿石{ore}，弟子{Disciples.Count}人，声望{SectReputation}";
 	}
 
 	void ShowYearSummary(int year)
@@ -423,7 +534,12 @@ public partial class GameManager : Node
 		if (data == null) return false;
 		SaveLoad.ApplySaveData(data, this);
 		PendingEvent = null;
+		RecruitTournamentDays = -1;
+		PendingRecruitCandidates = null;
 		EventBus.ChildBorn += (child, _, _) => _pendingNewborns.Add(child);
+		EventBus.DiscipleRecruited += d => LogEvent($"{d.Name}加入宗门");
+		EventBus.BreakthroughSuccess += d => LogEvent($"{d.Name}成功突破至{d.FullRealmName}！");
+		EventBus.BreakthroughFailed += d => LogEvent($"{d.Name}突破失败，修为受损");
 		EventBus.YearPassed += ShowYearSummary;
 		EventBus.DiscipleDeparted += OnDiscipleDeparted;
 		RefreshEquipmentBonuses();

@@ -20,7 +20,8 @@ public static class EventBus
     // Resource change (type, oldValue, newValue)
     public static event Action<ResourceType, int, int>? ResourceChanged;
 
-    // Day passed
+    // Recruit selection — candidates ready for UI to display
+    public static event Action<List<DiscipleData>>? RecruitSelectionReady;
     public static event Action<int, int, int>? DayPassed; // (day, month, year)
     public static event Action<int, int>? MonthPassed;     // (month, year)
     public static event Action<int>? YearPassed;           // (year)
@@ -36,6 +37,7 @@ public static class EventBus
     public static void EmitDayPassed(int d, int m, int y) => DayPassed?.Invoke(d, m, y);
     public static void EmitMonthPassed(int m, int y) => MonthPassed?.Invoke(m, y);
     public static void EmitYearPassed(int y) => YearPassed?.Invoke(y);
+    public static void EmitRecruitSelectionReady(List<DiscipleData> candidates) => RecruitSelectionReady?.Invoke(candidates);
 
     public static void Clear()
     {
@@ -50,5 +52,6 @@ public static class EventBus
         DayPassed = null;
         MonthPassed = null;
         YearPassed = null;
+        RecruitSelectionReady = null;
     }
 }

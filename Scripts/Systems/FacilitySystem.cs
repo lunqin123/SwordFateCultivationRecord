@@ -61,11 +61,11 @@ public class FacilitySystem
                     {
                         f.Level++;
                         f.IsUpgrading = false;
-                        EventBus.EmitNotification("设施升级", $"{f.TypeName}升级至Lv.{f.Level}！");
+                        EventBus.EmitNotification("灵筑晋升", $"{f.TypeName}升级至Lv.{f.Level}！");
                     }
                     else
                     {
-                        EventBus.EmitNotification("设施竣工", $"{f.TypeName}建造完成！");
+                        EventBus.EmitNotification("灵筑竣工", $"{f.TypeName}建造完成！");
                     }
                 }
                 continue;

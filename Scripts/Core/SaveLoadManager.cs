@@ -21,8 +21,7 @@ public class SaveLoadManager
         data.SaveTime = DateTime.Now;
         string json = JsonSerializer.Serialize(data, JsonOptions);
 
-        using var dir = DirAccess.Open("user://");
-        if (dir == null) DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(SaveDir));
+        DirAccess.MakeDirRecursiveAbsolute(ProjectSettings.GlobalizePath(SaveDir));
 
         string path = $"{SaveDir}slot_{slotIndex}.sav";
         using var file = FileAccess.Open(path, FileAccess.ModeFlags.Write);
@@ -61,16 +60,15 @@ public class SaveLoadManager
         string path = $"{SaveDir}slot_{slotIndex}.sav";
         if (!FileAccess.FileExists(path)) return false;
 
-        using var dir = DirAccess.Open(SaveDir);
-        if (dir == null) return false;
-
-        dir.Remove($"slot_{slotIndex}.sav");
-        return true;
+        return DirAccess.RemoveAbsolute(ProjectSettings.GlobalizePath(path)) == Error.Ok;
     }
 
     public int[] GetOccupiedSlots()
     {
         var slots = new List<int>();
+        if (!DirAccess.DirExistsAbsolute(ProjectSettings.GlobalizePath(SaveDir)))
+            return Array.Empty<int>();
+
         using var dir = DirAccess.Open(SaveDir);
         if (dir == null) return Array.Empty<int>();
 

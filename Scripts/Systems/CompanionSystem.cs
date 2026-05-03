@@ -22,7 +22,7 @@ public class CompanionSystem
         double compat = CalculateCompatibility(d1, d2);
         if (_rng.NextDouble() > compat)
         {
-            EventBus.EmitNotification("牵线失败", $"{d1.Name}与{d2.Name}似乎不太投缘，未能结成道侣之缘。");
+            EventBus.EmitNotification("牵线未果", $"{d1.Name}与{d2.Name}似乎不太投缘，未能结成道缘。");
             return null;
         }
 
@@ -37,7 +37,7 @@ public class CompanionSystem
         d2.CompanionId = companion.Id;
         _companions.Add(companion);
 
-        EventBus.EmitNotification("道侣结缘", $"{d1.Name}与{d2.Name}一见如故，结下了道侣之缘！");
+        EventBus.EmitNotification("道缘初结", $"{d1.Name}与{d2.Name}一见如故，结下了道缘！");
         return companion;
     }
 
@@ -54,7 +54,7 @@ public class CompanionSystem
         if (d1 != null) d1.IsMarried = true;
         if (d2 != null) d2.IsMarried = true;
 
-        EventBus.EmitNotification("结为道侣", $"{(d1?.Name ?? "?")}与{(d2?.Name ?? "?")}正式结为道侣，天地为证，从此携手修仙！");
+        EventBus.EmitNotification("结为道缘", $"{(d1?.Name ?? "?")}与{(d2?.Name ?? "?")}正式结为道缘，天地为证，从此携手修仙！");
         return true;
     }
 
@@ -79,7 +79,7 @@ public class CompanionSystem
         if (d2 != null) { d2.CompanionId = -1; d2.IsMarried = false; d2.Mood = Math.Max(0, d2.Mood - 30); }
 
         _companions.Remove(c);
-        EventBus.EmitNotification("道缘断绝", $"{(d1?.Name ?? "?")}与{(d2?.Name ?? "?")}解除了道侣关系，从此各自修行。");
+        EventBus.EmitNotification("道缘断绝", $"{(d1?.Name ?? "?")}与{(d2?.Name ?? "?")}解除了道缘，从此各自修行。");
         return true;
     }
 
@@ -143,7 +143,7 @@ public class CompanionSystem
                     // Create child with inherited stats
                     var child = CreateChild(d1, d2);
                     EventBus.EmitChildBorn(child, d1, d2);
-                    EventBus.EmitNotification("宗门大喜", $"{(d1.IsMale ? d2.Name : d1.Name)}诞下一子，取名{child.Name}！宗门后继有人！");
+                    EventBus.EmitNotification("宗门之喜", $"{(d1.IsMale ? d2.Name : d1.Name)}诞下一子，取名{child.Name}！宗门后继有人！");
                 }
             }
         }

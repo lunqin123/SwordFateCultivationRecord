@@ -40,6 +40,11 @@ public class DiscipleData
     public int Spirit { get; set; }          // 神识 - affects alchemy/craft
     public int Loyalty { get; set; } = 50;   // 忠心 - affects leave chance
 
+    // Unique flavor attributes
+    public string Background { get; set; } = "";   // 身世背景 e.g. "农家子弟"
+    public string Personality { get; set; } = "";  // 性格特质 e.g. "沉稳持重"
+    public string Trait { get; set; } = "";        // 特殊天赋 e.g. "过目不忘"
+
     // Cultivation realm
     public CultivationRealm Realm { get; set; } = CultivationRealm.Mortal;
     public int RealmLayer { get; set; }            // 1-9 within current realm
