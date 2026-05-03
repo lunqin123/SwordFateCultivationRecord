@@ -115,15 +115,13 @@ public partial class MainUI : Control
 		for (int i = 0; i < TabLabels.Length; i++)
 		{
 			int tabIdx = i;
-			var row = new HBoxContainer();
+			var btn = new Button { Text = "   " + TabLabels[i], Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(90, 38) };
 			string ipath = "res://Resources/Textures/Icons/" + tabIcons[i];
 			if (ResourceLoader.Exists(ipath))
 			{
-				var itex = ResourceLoader.Load<Texture2D>(ipath);
-				var icon = new TextureRect { Texture = itex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(18, 18) };
-				row.AddChild(icon); row.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				btn.Icon = ResourceLoader.Load<Texture2D>(ipath);
+				btn.ExpandIcon = true;
 			}
-			var btn = new Button { Text = TabLabels[i], Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(68, 34), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 			btn.AddThemeFontSizeOverride("font_size", 13);
 			btn.AddThemeColorOverride("font_color", UITheme.TextPrimary);
 			btn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
@@ -131,8 +129,7 @@ public partial class MainUI : Control
 			btn.AddThemeStyleboxOverride("hover", UITheme.SidebarBtnHover());
 			btn.Flat = true;
 			btn.Pressed += () => { AudioManager.PlayClick(); SwitchToTab(tabIdx); };
-			_sidebarBtns[i] = btn; row.AddChild(btn);
-			sidebarVBox.AddChild(row); sidebarVBox.AddChild(SP(1));
+			_sidebarBtns[i] = btn; sidebarVBox.AddChild(btn); sidebarVBox.AddChild(SP(1));
 		}
 		sidebarVBox.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 		var settingsBtn = new Button { Text = "  ⚙ 设置", Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(90, 36) };
