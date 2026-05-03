@@ -111,10 +111,19 @@ public partial class MainUI : Control
 		sTitle.AddThemeFontSizeOverride("font_size", 11); sTitle.AddThemeColorOverride("font_color", UITheme.TextDim);
 		sidebarVBox.AddChild(sTitle); sidebarVBox.AddChild(SP(12));
 
+		var tabIcons = new[] { "总览.png","弟子.png","营造.png","灵筑.png","道缘.png","宗门令.png","记事.png","卷宗.png" };
 		for (int i = 0; i < TabLabels.Length; i++)
 		{
 			int tabIdx = i;
-			var btn = new Button { Text = $"  {TabLabels[i]}", Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(90, 38) };
+			var row = new HBoxContainer();
+			string ipath = "res://Resources/Textures/Icons/" + tabIcons[i];
+			if (ResourceLoader.Exists(ipath))
+			{
+				var itex = ResourceLoader.Load<Texture2D>(ipath);
+				var icon = new TextureRect { Texture = itex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(18, 18) };
+				row.AddChild(icon); row.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			}
+			var btn = new Button { Text = TabLabels[i], Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(68, 34), SizeFlagsHorizontal = SizeFlags.ExpandFill };
 			btn.AddThemeFontSizeOverride("font_size", 13);
 			btn.AddThemeColorOverride("font_color", UITheme.TextPrimary);
 			btn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
@@ -122,7 +131,8 @@ public partial class MainUI : Control
 			btn.AddThemeStyleboxOverride("hover", UITheme.SidebarBtnHover());
 			btn.Flat = true;
 			btn.Pressed += () => { AudioManager.PlayClick(); SwitchToTab(tabIdx); };
-			_sidebarBtns[i] = btn; sidebarVBox.AddChild(btn); sidebarVBox.AddChild(SP(1));
+			_sidebarBtns[i] = btn; row.AddChild(btn);
+			sidebarVBox.AddChild(row); sidebarVBox.AddChild(SP(1));
 		}
 		sidebarVBox.AddChild(new Control { SizeFlagsVertical = SizeFlags.ExpandFill });
 		var settingsBtn = new Button { Text = "  ⚙ 设置", Alignment = HorizontalAlignment.Left, CustomMinimumSize = new Vector2I(90, 36) };
@@ -978,7 +988,10 @@ public partial class MainUI : Control
 			var av = MakeAvatarCircle(d.IsMale, 48); var ac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ac.AddChild(av); cv.AddChild(ac); cv.AddChild(SP(3));
 			string gi = d.IsMale ? "♂" : "♀"; cv.AddChild(new Label { Text = $"{gi} {d.Name}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(15, UITheme.Gold)); cv.AddChild(new Label { Text = $"{d.Age}岁", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim)); cv.AddChild(SP(3));
 			cv.AddChild(new Label { Text = $"身世: {d.Background}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextPrimary)); cv.AddChild(new Label { Text = $"性格: {d.Personality}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextPrimary));
-			if (d.Trait != "无") cv.AddChild(new Label { Text = $"天赋: {d.Trait}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextOrange));
+			if (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait))
+				cv.AddChild(new Label { Text = $"天赋: {d.Trait}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextOrange));
+				else
+				cv.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 14) });
 			cv.AddChild(SP(3));
 			StatLine(cv, "天赋", d.Talent, UITheme.Gold); StatLine(cv, "悟性", d.Comprehension, UITheme.TextBlue); StatLine(cv, "体质", d.Constitution, UITheme.TextGreen); StatLine(cv, "神识", d.Spirit, new Color(0.7f, 0.3f, 1.0f));
 			cv.AddChild(SP(2));
