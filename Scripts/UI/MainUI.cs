@@ -10,6 +10,7 @@ public partial class MainUI : Control
 	// Top bar
 	private Label _timeLabel = null!, _sectLabel = null!;
 	private readonly Dictionary<ResourceType, Label> _resourceLabels = new();
+	private readonly Dictionary<ResourceType, Control> _resourceAnchors = new(); // for float animations
 
 	// Bottom bar
 	private Button _nextDayBtn = null!;
@@ -160,9 +161,13 @@ public partial class MainUI : Control
 		var resRow = new HBoxContainer(); topHBox.AddChild(resRow);
 		foreach (ResourceType rt in Enum.GetValues<ResourceType>())
 		{
+			var anchor = new Control { Name = "Anchor_" + rt.ToString() }; // anchor for float animations
+			_resourceAnchors[rt] = anchor;
+			var innerRow = new HBoxContainer(); anchor.AddChild(innerRow);
 			var resIcon = SpriteSheetManager.GetResourceIcon(rt);
-			if (resIcon != null) { var icon = new TextureRect { Texture = resIcon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(20, 20) }; resRow.AddChild(icon); resRow.AddChild(new Control { CustomMinimumSize = new Vector2I(2, 0) }); }
-			var lb = new Label(); lb.AddThemeFontSizeOverride("font_size", 12); _resourceLabels[rt] = lb; resRow.AddChild(lb); resRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+			if (resIcon != null) { var icon = new TextureRect { Texture = resIcon, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(20, 20) }; innerRow.AddChild(icon); innerRow.AddChild(new Control { CustomMinimumSize = new Vector2I(2, 0) }); }
+			var lb = new Label(); lb.AddThemeFontSizeOverride("font_size", 12); _resourceLabels[rt] = lb; innerRow.AddChild(lb);
+			resRow.AddChild(anchor); resRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
 		}
 		topHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
 
@@ -448,7 +453,23 @@ public partial class MainUI : Control
 		EventBus.RecruitSelectionReady += ShowRecruitSelection;
 	}
 	void OnDayPassed(int _, int __, int ___) => RefreshAll();
-	void OnResourceChanged(ResourceType _, int __, int ___) => RefreshResources();
+	void OnResourceChanged(ResourceType type, int oldVal, int newVal) { RefreshResources(); if (newVal > oldVal) ShowResourceGain(type, newVal - oldVal); }
+
+	void ShowResourceGain(ResourceType type, int delta)
+	{
+		if (!_resourceAnchors.TryGetValue(type, out var anchor)) return;
+		var popup = new Label { Text = "+" + delta, HorizontalAlignment = HorizontalAlignment.Center };
+		popup.AddThemeFontSizeOverride("font_size", 14);
+		popup.AddThemeColorOverride("font_color", UITheme.Gold);
+		popup.AddThemeColorOverride("font_outline_color", new Color(0,0,0,0.6f));
+		popup.AddThemeConstantOverride("outline_size", 2);
+		popup.Position = new Vector2(0, -10);
+		anchor.AddChild(popup);
+		var t = popup.CreateTween().SetParallel();
+		t.TweenProperty(popup, "position", new Vector2(0, -40), 0.8f).SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
+		t.TweenProperty(popup, "modulate", new Color(1,1,1,0), 0.6f).SetEase(Tween.EaseType.In).SetDelay(0.2f);
+		t.Finished += () => popup.QueueFree();
+	}
 	void OnGameNotification(string t, string m)
 	{
 		if (t == "启禀") { _hintLabel.Text = m; _hintPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_hintPopup.GetChild(0)); }
