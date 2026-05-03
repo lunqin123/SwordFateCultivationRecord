@@ -2,7 +2,8 @@ namespace SwordFateCultivationRecord;
 
 public static class UITheme
 {
-    private static FontFile? _font;
+    private static FontFile? _titleFont; // MaShanZheng - calligraphy, for headings
+    private static FontFile? _bodyFont;  // Zpix - pixel, for body text
     private static bool _inited;
 
     // ===== Color Palette =====
@@ -23,6 +24,11 @@ public static class UITheme
     public static Color TopBarBg     => new(0.07f, 0.05f, 0.12f);
     public static Color BottomBarBg  => new(0.07f, 0.05f, 0.12f);
 
+    /// <summary>Calligraphy font for titles/headings (磅礴大气).</summary>
+    public static FontFile? TitleFont => _titleFont;
+    /// <summary>Pixel font for body text and buttons (像素风格).</summary>
+    public static FontFile? BodyFont => _bodyFont;
+
     public static void Init()
     {
         if (_inited) return;
@@ -30,28 +36,47 @@ public static class UITheme
 
         UITextures.Generate();
 
-        string fontPath = "res://Resources/Fonts/MaShanZheng-Regular.ttf";
-        if (!ResourceLoader.Exists(fontPath))
-            fontPath = "res://Resources/Fonts/MaShanZheng-Regular.woff2";
-        if (ResourceLoader.Exists(fontPath))
-        {
-            try { _font = ResourceLoader.Load<FontFile>(fontPath); }
-            catch { }
-        }
+        // Title font: MaShanZheng calligraphy
+        if (ResourceLoader.Exists("res://Resources/Fonts/MaShanZheng-Regular.ttf"))
+            try { _titleFont = ResourceLoader.Load<FontFile>("res://Resources/Fonts/MaShanZheng-Regular.ttf"); } catch { }
+        if (_titleFont == null && ResourceLoader.Exists("res://Resources/Fonts/MaShanZheng-Regular.woff2"))
+            try { _titleFont = ResourceLoader.Load<FontFile>("res://Resources/Fonts/MaShanZheng-Regular.woff2"); } catch { }
+
+        // Body font: Zpix pixel font
+        if (ResourceLoader.Exists("res://Resources/Fonts/zpix.ttf"))
+            try { _bodyFont = ResourceLoader.Load<FontFile>("res://Resources/Fonts/zpix.ttf"); } catch { }
     }
 
+    /// <summary>Apply default theme (title font) to root control.</summary>
     public static void ApplyTo(Control root)
     {
-        if (_font == null) return;
+        if (_titleFont == null && _bodyFont == null) return;
         var theme = root.Theme ?? new Theme();
-        theme.DefaultFont = _font;
-        theme.DefaultFontSize = 16;
+        theme.DefaultFont = _bodyFont ?? _titleFont;
+        theme.DefaultFontSize = 14;
         root.Theme = theme;
+    }
+
+    /// <summary>Apply pixel body font to a specific control.</summary>
+    public static void ApplyBodyFont(Control control)
+    {
+        if (_bodyFont == null) return;
+        control.AddThemeFontOverride("font", _bodyFont);
+        control.AddThemeFontSizeOverride("font_size", 13);
+    }
+
+    /// <summary>Apply calligraphy title font to a label, with given size.</summary>
+    public static void ApplyTitleFont(Label label, int size)
+    {
+        if (_titleFont != null)
+        {
+            label.AddThemeFontOverride("font", _titleFont);
+            label.AddThemeFontSizeOverride("font_size", size);
+        }
     }
 
     // ===== StyleBox Factories =====
 
-    /// <summary>Standard card with gold-trimmed border on dark background.</summary>
     public static StyleBoxFlat CardStyle()
     {
         return new StyleBoxFlat
@@ -67,7 +92,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Card hover state — brighter border.</summary>
     public static StyleBoxFlat CardHoverStyle()
     {
         return new StyleBoxFlat
@@ -83,21 +107,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Gold ornate border — thin decorative panel.</summary>
-    public static StyleBoxFlat OrnateBorder()
-    {
-        return new StyleBoxFlat
-        {
-            BgColor = new Color(0.08f, 0.05f, 0.14f, 0.92f),
-            CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6,
-            CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
-            BorderWidthBottom = 2, BorderWidthLeft = 2,
-            BorderWidthRight = 2, BorderWidthTop = 2,
-            BorderColor = GoldDark,
-        };
-    }
-
-    /// <summary>Sidebar button — normal state.</summary>
     public static StyleBoxFlat SidebarBtnNormal()
     {
         return new StyleBoxFlat
@@ -108,7 +117,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Sidebar button — hover state.</summary>
     public static StyleBoxFlat SidebarBtnHover()
     {
         return new StyleBoxFlat
@@ -122,7 +130,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Sidebar button — active/selected state.</summary>
     public static StyleBoxFlat SidebarBtnActive()
     {
         return new StyleBoxFlat
@@ -136,21 +143,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Top / bottom bar background.</summary>
-    public static StyleBoxFlat BarStyle()
-    {
-        return new StyleBoxFlat
-        {
-            BgColor = TopBarBg,
-            CornerRadiusTopLeft = 0, CornerRadiusTopRight = 0,
-            CornerRadiusBottomLeft = 0, CornerRadiusBottomRight = 0,
-            BorderWidthBottom = 1, BorderWidthTop = 0,
-            BorderWidthLeft = 0, BorderWidthRight = 0,
-            BorderColor = GoldDark,
-        };
-    }
-
-    /// <summary>Top bar style (border at bottom).</summary>
     public static StyleBoxFlat TopBarStyle()
     {
         return new StyleBoxFlat
@@ -164,7 +156,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Bottom bar style (border at top).</summary>
     public static StyleBoxFlat BottomBarStyle()
     {
         return new StyleBoxFlat
@@ -178,7 +169,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Sidebar panel background.</summary>
     public static StyleBoxFlat SidebarPanelStyle()
     {
         return new StyleBoxFlat
@@ -192,7 +182,6 @@ public static class UITheme
         };
     }
 
-    /// <summary>Content area background.</summary>
     public static StyleBoxFlat ContentAreaStyle()
     {
         return new StyleBoxFlat
@@ -203,7 +192,7 @@ public static class UITheme
         };
     }
 
-    // ===== Button StyleBoxes (with textures or fallback) =====
+    // ===== Button StyleBoxes =====
 
     public static StyleBox BtnStyleNormal()
     {
