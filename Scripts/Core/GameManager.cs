@@ -29,6 +29,10 @@ public partial class GameManager : Node
 	public int RecruitTournamentDays { get; private set; } = -1; // -1 = 未安排
 	public List<DiscipleData>? PendingRecruitCandidates { get; private set; }
 
+	// 自动智能安排 — 需藏经阁 + Lv.2以上解锁
+	public bool AutoAssignEnabled { get; set; }
+	public bool CanAutoAssign => SectLevel >= 2 && Facilities.AllFacilities.Any(f => f.IsBuilt && f.Type == FacilityType.Library);
+
 	private readonly Random _rng = new();
 	private readonly List<DiscipleData> _pendingNewborns = new();
 	public List<LogEntry> EventLogEntries { get; set; } = new();
@@ -138,6 +142,10 @@ public partial class GameManager : Node
 		int powerGain = Disciples.ProcessDaily(Resources, Facilities.AllFacilities, SectLevel, compBonus);
 		SectPower += powerGain;
 		AllEquipment.AddRange(Disciples.NewEquipmentToday);
+
+		// 4.5 Auto-assign: reassign disciples based on condition
+		if (AutoAssignEnabled && CanAutoAssign)
+			RunAutoAssign();
 
 		HandleNewborns();
 
@@ -289,6 +297,34 @@ public partial class GameManager : Node
 	{
 		PendingRecruitCandidates = null;
 	}
+
+	/// <summary>Daily auto-assign: check each disciple and reassign unhealthy ones to rest.</summary>
+	private void RunAutoAssign()
+	{
+		foreach (var d in Disciples.AllDisciples)
+		{
+			if (d.IsInBreakthrough) continue;
+			// Low mood → rest
+			if (d.Mood < 20 && d.CurrentTask != DiscipleTaskType.Rest)
+				{ Disciples.AssignTask(d.Id, DiscipleTaskType.Rest); continue; }
+			// Low stamina → rest
+			if (d.CurrentStamina < d.MaxStamina * 0.2 && d.CurrentTask != DiscipleTaskType.Rest)
+				{ Disciples.AssignTask(d.Id, DiscipleTaskType.Rest); continue; }
+			// Low health → rest
+			if (d.Health < d.MaxHealth * 0.3 && d.CurrentTask != DiscipleTaskType.Rest)
+				{ Disciples.AssignTask(d.Id, DiscipleTaskType.Rest); continue; }
+			// Recovered → return to best task
+			if (d.CurrentTask == DiscipleTaskType.Rest
+				&& d.Mood >= 50 && d.CurrentStamina >= d.MaxStamina * 0.7 && d.Health >= d.MaxHealth * 0.7)
+			{
+				var best = d.TaskProficiency.Count > 0
+					? d.TaskProficiency.OrderByDescending(kv => kv.Value).First().Key
+					: DiscipleTaskType.Cultivate;
+				Disciples.AssignTask(d.Id, best);
+			}
+		}
+	}
+
 
 	// ====== Player Actions ======
 

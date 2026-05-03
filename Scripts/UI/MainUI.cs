@@ -440,8 +440,30 @@ public partial class MainUI : Control
 		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
 		var applyBtn = SmallBtn("执行"); applyBtn.Pressed += ApplyBatchAssign; bc1.AddChild(applyBtn);
 		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
-		var smartBtn = SmallBtn("智能安排"); smartBtn.AddThemeColorOverride("font_color", UITheme.Gold);
-		smartBtn.Pressed += () => { _smartPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_smartPopup.GetChild(0)); }; bc1.AddChild(smartBtn);
+		// Smart assign toggle (unlocked after building Library + Lv.2)
+		if (GM.CanAutoAssign)
+		{
+			var autoToggle = new CheckBox { ButtonPressed = GM.AutoAssignEnabled };
+			autoToggle.AddThemeColorOverride("font_color", UITheme.Gold);
+			autoToggle.AddThemeFontSizeOverride("font_size", 11);
+			var autoLabel = new Label { Text = "自动安排", VerticalAlignment = VerticalAlignment.Center };
+			autoLabel.AddThemeFontSizeOverride("font_size", 11); autoLabel.AddThemeColorOverride("font_color", UITheme.TextGreen);
+			autoToggle.Toggled += (on) => { GM.AutoAssignEnabled = on; };
+			bc1.AddChild(autoToggle);
+			bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(2, 0) });
+			bc1.AddChild(autoLabel);
+			// Strategy button
+			var stratBtn = SmallBtn("策略"); stratBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			stratBtn.Pressed += () => { _smartPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_smartPopup.GetChild(0)); };
+			bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			bc1.AddChild(stratBtn);
+		}
+		else
+		{
+			var lockHint = new Label { Text = "🔒 需藏经阁+Lv.2解锁自动安排", VerticalAlignment = VerticalAlignment.Center };
+			lockHint.AddThemeFontSizeOverride("font_size", 10); lockHint.AddThemeColorOverride("font_color", UITheme.TextDim);
+			bc1.AddChild(lockHint);
+		}
 		c.AddChild(batchBar); c.AddChild(SP(8));
 
 		var cardGrid = new GridContainer { Columns = 3 }; c.AddChild(cardGrid);
