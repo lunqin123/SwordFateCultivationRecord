@@ -103,6 +103,13 @@ public partial class SettingsWindow : Window
 
         // BGM selection
         tab.AddChild(Section("背景音乐"));
+        var bgmToggleRow = new HBoxContainer(); tab.AddChild(bgmToggleRow);
+        bgmToggleRow.AddChild(new Label { Text = "播放音乐", CustomMinimumSize = new Vector2I(80, 0) }.WithFont(13, new Color(0.88f, 0.88f, 0.92f)));
+        bgmToggleRow.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        var bgmToggle = new CheckButton { ButtonPressed = AudioManager.IsBGMRunning };
+        bgmToggleRow.AddChild(bgmToggle);
+        bgmToggle.Toggled += (on) => { if (on) AudioManager.ResumeBGM(); else AudioManager.PauseBGM(); };
+        tab.AddChild(SP(6));
         tab.AddChild(SP(4));
         var bgmDrop = new OptionButton(); bgmDrop.SizeFlagsHorizontal = Control.SizeFlags.ExpandFill;
         var bgmNames = AudioManager.BgmNames;

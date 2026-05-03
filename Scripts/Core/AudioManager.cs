@@ -116,7 +116,7 @@ public static class AudioManager
     public static void UpdateBGMVolume()
     {
         if (_bgmPlayer != null)
-            _bgmPlayer.VolumeDb = Mathf.LinearToDb(GameSettings.MusicVolume * 0.6f);
+            _bgmPlayer.VolumeDb = Mathf.LinearToDb(GameSettings.MasterVolume * GameSettings.MusicVolume * 0.6f);
     }
 
     public static void ConnectEvents()
@@ -128,7 +128,7 @@ public static class AudioManager
         EventBus.EventChoiceRequired += _ => PlaySfx("event_trigger");
         EventBus.GameNotification += (t, _) =>
         {
-            if (t == "宗门覆灭") PlaySfx("event_gameover");
+            if (t == "宗门倾覆") PlaySfx("event_gameover");
         };
     }
 
@@ -139,10 +139,24 @@ public static class AudioManager
     public static void PlayUpgrade() => PlaySfx("action_upgrade");
     public static void PlayCompanion() => PlaySfx("action_companion");
 
+    public static void PauseBGM()
+    {
+        _bgmPlayer?.CallDeferred(AudioStreamPlayer.MethodName.Stop);
+    }
+
+    public static void ResumeBGM()
+    {
+        if (_bgmPlayer != null && !_bgmPlayer.Playing && _bgmPaths.Count > 0)
+            _bgmPlayer.CallDeferred(AudioStreamPlayer.MethodName.Play);
+    }
+
+    public static bool IsBGMRunning => _bgmPlayer != null && _bgmPlayer.Playing;
+
     static void PlaySfx(string name)
     {
         if (_root == null || !_sounds.TryGetValue(name, out var stream)) return;
-        var player = new AudioStreamPlayer { Stream = stream, VolumeDb = 0 };
+        float vol = Mathf.LinearToDb(GameSettings.MasterVolume * GameSettings.SfxVolume);
+        var player = new AudioStreamPlayer { Stream = stream, VolumeDb = vol };
         _root.AddChild(player);
         player.Finished += () => player.QueueFree();
         player.CallDeferred(AudioStreamPlayer.MethodName.Play);

@@ -1063,7 +1063,22 @@ public partial class MainUI : Control
 	}
 	void ResolveChoice(int i) { _eventChoice1.Hide(); _eventChoice2.Hide(); _eventChoice3.Hide(); _eventEffect1.Hide(); _eventEffect2.Hide(); _eventEffect3.Hide(); _dismissedBtn.Show(); GM.ResolveEvent(i); _dismissedBtn.Text = "合上"; }
 	void DismissEventPopup() { _eventPopup.Hide(); GM.DismissEvent(); RefreshAll(); }
-	public override void _Input(InputEvent e) { if (!IsInsideTree()) return; if (e.IsActionPressed("ui_cancel") && _eventPopup.Visible) DismissEventPopup(); }
+	public override void _Input(InputEvent e)
+	{
+		if (!IsInsideTree()) return;
+		if (!e.IsActionPressed("ui_cancel")) return;
+		if (_eventPopup.Visible) { DismissEventPopup(); return; }
+		if (_recruitPopup.Visible) { _recruitPopup.Hide(); GM.CancelRecruit(); return; }
+		if (_detailPopup.Visible) { _detailPopup.Hide(); return; }
+		if (_savePopup.Visible) { _savePopup.Hide(); return; }
+		if (_loadPopup.Visible) { _loadPopup.Hide(); return; }
+		if (_hintPopup.Visible) { _hintPopup.Hide(); return; }
+		if (_smartPopup.Visible) { _smartPopup.Hide(); return; }
+		if (_facDetailPopup.Visible) { _facDetailPopup.Hide(); return; }
+		if (_bgmSelectPopup.Visible) { _bgmSelectPopup.Hide(); return; }
+		if (_gameOverPopup.Visible) return;
+		_settingsPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_settingsPopup.GetChild(0));
+	}
 
 	void ShowDiscipleDetail(DiscipleData d)
 	{
