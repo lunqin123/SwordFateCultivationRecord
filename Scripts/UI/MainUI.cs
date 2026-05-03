@@ -460,9 +460,11 @@ public partial class MainUI : Control
 		}
 		else
 		{
-			var lockHint = new Label { Text = "🔒 需藏经阁+Lv.2解锁自动安排", VerticalAlignment = VerticalAlignment.Center };
-			lockHint.AddThemeFontSizeOverride("font_size", 10); lockHint.AddThemeColorOverride("font_color", UITheme.TextDim);
-			bc1.AddChild(lockHint);
+			var lockBtn = new Button { Text = "🔒 自动安排（需藏经阁+Lv.2）", Disabled = true, CustomMinimumSize = new Vector2I(180, 22) };
+			lockBtn.AddThemeFontSizeOverride("font_size", 10);
+			lockBtn.AddThemeColorOverride("font_color_disabled", UITheme.TextDim);
+			lockBtn.Flat = true;
+			bc1.AddChild(lockBtn);
 		}
 		c.AddChild(batchBar); c.AddChild(SP(8));
 

@@ -508,6 +508,14 @@ public class DiscipleSystem
 
         double chance = info.BreakthroughChance;
         chance *= 1.0 + (d.Comprehension - 50) / 200.0;
+
+        // Sect resources can boost success rate: up to +5 pills (+10%) and +200 essence (+10%)
+        int pillsUsed = 0, essenceUsed = 0;
+        while (pillsUsed < 5 && resources.Spend(ResourceType.Pill, 1)) pillsUsed++;
+        while (essenceUsed < 200 && resources.Spend(ResourceType.SpiritEssence, 20)) essenceUsed += 20;
+        double resourceBoost = pillsUsed * 0.02 + essenceUsed * 0.0005;
+        chance += resourceBoost;
+
         chance = Math.Clamp(chance, 0.05, 0.95);
 
         if (_rng.NextDouble() < chance)
