@@ -439,34 +439,30 @@ public partial class MainUI : Control
 		_batchDrop = new OptionButton(); _batchDrop.AddThemeFontSizeOverride("font_size", 11); foreach (var tn in TaskNames) _batchDrop.AddItem(tn); bc1.AddChild(_batchDrop);
 		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
 		var applyBtn = SmallBtn("执行"); applyBtn.Pressed += ApplyBatchAssign; bc1.AddChild(applyBtn);
-		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
-		// Smart assign toggle (unlocked after building Library + Lv.2)
+		c.AddChild(batchBar); c.AddChild(SP(4));
+
+		// Auto-assign row (separate line)
+		var autoRow = new HBoxContainer();
+		var ac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; autoRow.AddChild(ac);
 		if (GM.CanAutoAssign)
 		{
 			var autoToggle = new CheckBox { ButtonPressed = GM.AutoAssignEnabled };
-			autoToggle.AddThemeColorOverride("font_color", UITheme.Gold);
 			autoToggle.AddThemeFontSizeOverride("font_size", 11);
-			var autoLabel = new Label { Text = "自动安排", VerticalAlignment = VerticalAlignment.Center };
-			autoLabel.AddThemeFontSizeOverride("font_size", 11); autoLabel.AddThemeColorOverride("font_color", UITheme.TextGreen);
 			autoToggle.Toggled += (on) => { GM.AutoAssignEnabled = on; };
-			bc1.AddChild(autoToggle);
-			bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(2, 0) });
-			bc1.AddChild(autoLabel);
-			// Strategy button
+			ac.AddChild(autoToggle);
+			ac.AddChild(new Control { CustomMinimumSize = new Vector2I(3, 0) });
+			ac.AddChild(new Label { Text = "自动安排", VerticalAlignment = VerticalAlignment.Center }.WithFont(11, UITheme.TextGreen));
+			ac.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
 			var stratBtn = SmallBtn("策略"); stratBtn.AddThemeColorOverride("font_color", UITheme.Gold);
 			stratBtn.Pressed += () => { _smartPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_smartPopup.GetChild(0)); };
-			bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
-			bc1.AddChild(stratBtn);
+			ac.AddChild(stratBtn);
 		}
 		else
 		{
-			var lockBtn = new Button { Text = "🔒 自动安排（需藏经阁+Lv.2）", Disabled = true, CustomMinimumSize = new Vector2I(180, 22) };
-			lockBtn.AddThemeFontSizeOverride("font_size", 10);
-			lockBtn.AddThemeColorOverride("font_color_disabled", UITheme.TextDim);
-			lockBtn.Flat = true;
-			bc1.AddChild(lockBtn);
+			ac.AddChild(new Label { Text = "🔒 修建藏经阁并达到Lv.2可解锁自动安排" }.WithFont(10, UITheme.TextDim));
 		}
-		c.AddChild(batchBar); c.AddChild(SP(8));
+		c.AddChild(autoRow);
+		c.AddChild(SP(8));
 
 		var cardGrid = new GridContainer { Columns = 3 }; c.AddChild(cardGrid);
 		foreach (var d in GM.Disciples.AllDisciples)
