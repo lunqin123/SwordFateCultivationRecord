@@ -705,10 +705,10 @@ public partial class MainUI : Control
 			{
 				var d1 = GM.Disciples.Get(comp.DiscipleId1); var d2 = GM.Disciples.Get(comp.DiscipleId2);
 				if (d1 == null || d2 == null) continue;
-				var card = MakeCard(500); var cv = (VBoxContainer)card.GetChild(0);
+				var card = MakeCard(500); card.SizeFlagsHorizontal = SizeFlags.ExpandFill; var cv = (VBoxContainer)card.GetChild(0);
 
 				// Header: affection + status
-				var hdr = new HBoxContainer();
+				var hdr = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 				hdr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 				Color affC = comp.Affection >= 80 ? new Color(1,0.4f,0.6f) : comp.Affection >= 60 ? new Color(1,0.6f,0.3f) : UITheme.TextDim;
 				hdr.AddChild(new Label { Text = $"好感 {comp.Affection:F0}/100" }.WithFont(12, affC));
@@ -723,7 +723,7 @@ public partial class MainUI : Control
 				cv.AddChild(affBar); cv.AddChild(SP(8));
 
 				// Two disciple panels
-				var bothRow = new HBoxContainer();
+				var bothRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 
 				// -- Left --
 				var lp = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
@@ -819,10 +819,10 @@ public partial class MainUI : Control
 
 		foreach (var q in GM.Quests.AllQuests)
 		{
-			var card = MakeCard(500); var cv = (VBoxContainer)card.GetChild(0);
+			var card = MakeCard(500); card.SizeFlagsHorizontal = SizeFlags.ExpandFill; var cv = (VBoxContainer)card.GetChild(0);
 
 			// Top row: title + tier badge + status
-			var topRow = new HBoxContainer();
+			var topRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 			var tierBadge = new Label { Text = $" [{q.TierLabel}] " };
 			tierBadge.AddThemeFontSizeOverride("font_size", 11); tierBadge.AddThemeColorOverride("font_color", q.TierColor);
 			topRow.AddChild(tierBadge);
