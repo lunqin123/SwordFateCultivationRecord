@@ -769,14 +769,14 @@ public partial class MainUI : Control
 				cv.AddChild(dl); cv.AddChild(SP(6));
 
 				// Action buttons
-				var br = new HBoxContainer(); var bcr = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; br.AddChild(bcr);
+				var br = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
 				int cId = comp.Id;
-				var g1b = SmallBtn("赠丹药"); g1b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.Pill, 1); bcr.AddChild(g1b);
-				bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
-				var g2b = SmallBtn("赠灵石"); g2b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.SpiritStone, 50); bcr.AddChild(g2b);
-				if (!comp.IsMarried) { bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) }); var mb = SmallBtn("结道缘"); mb.Disabled = comp.Affection < 60; mb.Pressed += () => GM.ProposeMarriage(cId); bcr.AddChild(mb); }
-				bcr.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
-				var bb = SmallBtn("和离"); bb.Pressed += () => GM.BreakUpCompanion(cId); bcr.AddChild(bb); cv.AddChild(br);
+				var g1b = SmallBtn("赠丹药"); g1b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.Pill, 1); br.AddChild(g1b);
+				br.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				var g2b = SmallBtn("赠灵石"); g2b.Pressed += () => GM.GiveGiftToCompanion(cId, ResourceType.SpiritStone, 50); br.AddChild(g2b);
+				if (!comp.IsMarried) { br.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) }); var mb = SmallBtn("结道缘"); mb.Disabled = comp.Affection < 60; mb.Pressed += () => GM.ProposeMarriage(cId); br.AddChild(mb); }
+				br.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				var bb = SmallBtn("和离"); bb.Pressed += () => GM.BreakUpCompanion(cId); br.AddChild(bb); cv.AddChild(br);
 
 				c.AddChild(card); c.AddChild(SP(8));
 			}
