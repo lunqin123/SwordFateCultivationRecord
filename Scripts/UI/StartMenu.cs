@@ -90,6 +90,7 @@ public partial class StartMenu : Control
 
         // Title
         var title = new Label { Text = "剑缘修仙录", HorizontalAlignment = HorizontalAlignment.Center };
+	        if (UITheme.TitleFont != null) title.AddThemeFontOverride("font", UITheme.TitleFont);
         title.AddThemeFontSizeOverride("font_size", 52);
         title.AddThemeColorOverride("font_color", UITheme.Gold);
         vbox.AddChild(title);
@@ -146,6 +147,7 @@ public partial class StartMenu : Control
     private static Button MakeMenuButton(string text)
     {
         var b = new Button { Text = text, Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(320, 52) };
+	        if (UITheme.BodyFont != null) b.AddThemeFontOverride("font", UITheme.BodyFont);
         b.AddThemeFontSizeOverride("font_size", 18);
         b.AddThemeColorOverride("font_color", UITheme.TextPrimary);
         b.AddThemeColorOverride("font_hover_color", UITheme.Gold);
