@@ -54,6 +54,7 @@ public partial class MainUI : Control
 
 	// Smart/Batch assign
 	private Window _smartPopup = null!;
+	private Window _facDetailPopup = null!;
 	private OptionButton _batchDrop = null!;
 	private readonly Dictionary<int, CheckBox> _batchChecks = new();
 
@@ -192,6 +193,7 @@ public partial class MainUI : Control
 		BuildPopups();
 		BuildRecruitPopup();
 		BuildSmartAssignPopup();
+		BuildFacilityDetailPopup();
 
 		for (int i = 0; i < 8; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		SwitchToTab(0);
@@ -322,6 +324,88 @@ public partial class MainUI : Control
 		sv.AddChild(SP(8));
 		var closeBtn = SmallBtn("合上"); closeBtn.Pressed += () => _smartPopup.Hide();
 		var cc22 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc22.AddChild(closeBtn); sv.AddChild(cc22); sv.AddChild(SP(8));
+	}
+
+
+	// ===================== FACILITY DETAIL POPUP =====================
+
+	void BuildFacilityDetailPopup()
+	{
+		_facDetailPopup = new Window { Title = "灵筑管理", Size = new Vector2I(480, 420), Visible = false, Exclusive = true, Unresizable = true };
+		_facDetailPopup.CloseRequested += () => _facDetailPopup.Hide();
+		AddChild(_facDetailPopup);
+		// Content will be filled dynamically in ShowFacilityDetail
+	}
+
+	void ShowFacilityDetail(FacilityData f)
+	{
+		_facDetailPopup.Title = $"{f.TypeName} · 管理";
+		var root = (VBoxContainer)_facDetailPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+
+		// Header
+		var facTex = SpriteSheetManager.GetFacilityIcon(f.Type);
+		if (facTex != null) { var ir = new TextureRect { Texture = facTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(56, 56) }; var ic = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ic.AddChild(ir); root.AddChild(ic); root.AddChild(SP(6)); }
+		root.AddChild(new Label { Text = $"{f.TypeName} Lv.{f.Level}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(20, UITheme.Gold));
+		var info = FacilityTable.GetInfo(f.Type);
+		root.AddChild(new Label { Text = info.Description, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+		root.AddChild(SP(10));
+		root.AddChild(HR());
+		root.AddChild(SP(8));
+
+		// Current status
+		root.AddChild(HL("当前产出", 15, UITheme.Gold));
+		root.AddChild(SP(4));
+		int output = FacilityTable.GetOutput(f.Type, f.Level);
+		string outputName = ResName(info.OutputType);
+		root.AddChild(new Label { Text = $"每日产出: {outputName} +{output}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+		double taskBonus = FacilityTable.GetTaskBonus(f.Type, f.Level, DiscipleTaskType.Cultivate);
+		if (taskBonus == 0)
+		{
+			// Check other task synergies
+			foreach (DiscipleTaskType tt in Enum.GetValues<DiscipleTaskType>())
+			{
+				double tb = FacilityTable.GetTaskBonus(f.Type, f.Level, tt);
+				if (tb > 0) { taskBonus = tb; break; }
+			}
+		}
+		if (taskBonus > 0)
+			root.AddChild(new Label { Text = $"任务加成: +{taskBonus * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextGreen));
+		root.AddChild(new Label { Text = $"容纳人数: {f.MaxDisciples}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+
+		root.AddChild(SP(8));
+		root.AddChild(HR());
+		root.AddChild(SP(8));
+
+		// Level-up preview
+		if (f.Level < f.MaxLevel)
+		{
+			root.AddChild(HL($"晋升至 Lv.{f.Level + 1} 预览", 15, UITheme.Gold));
+			root.AddChild(SP(4));
+			int nextOut = FacilityTable.GetOutput(f.Type, f.Level + 1);
+			root.AddChild(new Label { Text = $"产出: {outputName} {output} → {nextOut}/日", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
+			root.AddChild(new Label { Text = $"任务加成: +{taskBonus * 100:F0}% → +{FacilityTable.GetTaskBonus(f.Type, f.Level + 1, DiscipleTaskType.Cultivate) * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
+			int cost = FacilityTable.GetUpgradeCost(f.Type, f.Level);
+			root.AddChild(new Label { Text = $"晋升费用: {cost}灵石", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextOrange));
+			root.AddChild(SP(6));
+			var upBtn = new Button { Text = "晋升灵筑", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(160, 36) };
+			upBtn.AddThemeFontSizeOverride("font_size", 14); upBtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); upBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+			upBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); upBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			int fid = f.Id; upBtn.Pressed += () => { GM.UpgradeFacility(fid); _facDetailPopup.Hide(); RefreshFacilities(); };
+			var ubc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ubc.AddChild(upBtn); root.AddChild(ubc);
+		}
+		else
+		{
+			root.AddChild(new Label { Text = "已达最高等级", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.Gold));
+		}
+
+		root.AddChild(SP(8));
+		var closeBtn = SmallBtn("合上"); closeBtn.Pressed += () => _facDetailPopup.Hide();
+		var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(closeBtn); root.AddChild(cc);
+		root.AddChild(SP(8));
+
+		_facDetailPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_facDetailPopup.GetChild(0));
 	}
 
 	// ===================== TAB SWITCHING =====================
@@ -538,22 +622,75 @@ public partial class MainUI : Control
 	void RefreshFacilities()
 	{
 		var c = _tabContents[3]; c.FreeChildren();
-		c.AddChild(HL($"灵筑管理（{GM.Facilities.Count}座）", 18, UITheme.Gold)); c.AddChild(SP(10));
+		c.AddChild(HL($"灵筑管理（{GM.Facilities.Count}座）", 18, UITheme.Gold)); c.AddChild(SP(12));
 		if (GM.Facilities.Count == 0) { c.AddChild(TB("尚未营造灵筑。切换到「营造」页开始建设。", UITheme.TextDim, 13)); return; }
-		var cardGrid = new GridContainer { Columns = 3 }; c.AddChild(cardGrid);
+
 		foreach (var f in GM.Facilities.AllFacilities.OrderByDescending(f => f.Level))
 		{
-			var card = MakeCard(220); var cv = (VBoxContainer)card.GetChild(0);
-			var facTex = SpriteSheetManager.GetFacilityIcon(f.Type); var ir = new TextureRect { Texture = facTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(44, 44) }; var ic = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ic.AddChild(ir); cv.AddChild(ic); cv.AddChild(SP(4));
-			cv.AddChild(new Label { Text = $"{f.TypeName} Lv.{f.Level}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(15, UITheme.Gold));
-			cv.AddChild(new Label { Text = f.StatusText, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, f.IsBuilt ? UITheme.TextGreen : f.IsUnderConstruction ? UITheme.TextOrange : UITheme.TextDim));
-			cv.AddChild(SP(4));
-			if (f.IsBuilt) { cv.AddChild(new Label { Text = $"容纳{f.MaxDisciples}人  产{FacilityTable.GetOutput(f.Type, f.Level)}/d", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextPrimary)); if (f.Level < f.MaxLevel) { int cost = FacilityTable.GetUpgradeCost(f.Type, f.Level); var ub = SmallBtn($"晋升 {cost}灵石"); int fid = f.Id; ub.Pressed += () => GM.UpgradeFacility(fid); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(ub); cv.AddChild(bc); } else cv.AddChild(new Label { Text = "已满级", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim)); }
-			else if (f.IsUnderConstruction) { string sl = f.IsUpgrading ? "晋升中" : "营造中"; cv.AddChild(new Label { Text = $"{sl} {f.ConstructionProgress}/{FacilityTable.GetInfo(f.Type).BuildDays}日", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextOrange)); }
-			cardGrid.AddChild(card);
+			var card = MakeCard(600); card.CustomMinimumSize = new Vector2I(550, 0); var cv = (VBoxContainer)card.GetChild(0);
+
+			// Top row: icon + name/status + buttons
+			var topRow = new HBoxContainer();
+			var facTex = SpriteSheetManager.GetFacilityIcon(f.Type);
+			if (facTex != null) { var ir = new TextureRect { Texture = facTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(48, 48) }; topRow.AddChild(ir); topRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) }); }
+
+			var mid = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			mid.AddChild(new Label { Text = $"{f.TypeName} Lv.{f.Level}" }.WithFont(16, UITheme.Gold));
+			mid.AddChild(new Label { Text = f.StatusText }.WithFont(11, f.IsBuilt ? UITheme.TextGreen : f.IsUnderConstruction ? UITheme.TextOrange : UITheme.TextDim));
+			topRow.AddChild(mid);
+
+			// Buttons
+			if (f.IsBuilt)
+			{
+				var mgrBtn = SmallBtn("管理"); mgrBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+				var fid2 = f.Id; mgrBtn.Pressed += () => { var ff = GM.Facilities.Get(fid2); if (ff != null) ShowFacilityDetail(ff); };
+				topRow.AddChild(mgrBtn);
+				topRow.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+				if (f.Level < f.MaxLevel)
+				{
+					int cost = FacilityTable.GetUpgradeCost(f.Type, f.Level);
+					var upBtn = SmallBtn($"晋升{cost}灵石");
+					int fid3 = f.Id; upBtn.Pressed += () => GM.UpgradeFacility(fid3);
+					topRow.AddChild(upBtn);
+				}
+			}
+			cv.AddChild(topRow);
+
+			// Detail row
+			if (f.IsBuilt)
+			{
+				cv.AddChild(SP(6));
+				var detailRow = new HBoxContainer();
+				int outVal = FacilityTable.GetOutput(f.Type, f.Level);
+				string outName = ResName(FacilityTable.GetInfo(f.Type).OutputType);
+				detailRow.AddChild(new Label { Text = $"产出: {outName}+{outVal}/日" }.WithFont(12, UITheme.TextPrimary));
+				detailRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+				detailRow.AddChild(new Label { Text = $"容纳: {f.MaxDisciples}人" }.WithFont(12, UITheme.TextDim));
+				detailRow.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
+				string bonusText = "";
+				foreach (DiscipleTaskType tt in Enum.GetValues<DiscipleTaskType>())
+				{
+					double tb = FacilityTable.GetTaskBonus(f.Type, f.Level, tt);
+					if (tb > 0) { bonusText = $"加成: {TaskNames[(int)tt]}+{tb*100:F0}%"; break; }
+				}
+				if (!string.IsNullOrEmpty(bonusText))
+					detailRow.AddChild(new Label { Text = bonusText }.WithFont(12, UITheme.TextGreen));
+				cv.AddChild(detailRow);
+			}
+			else if (f.IsUnderConstruction)
+			{
+				cv.AddChild(SP(4));
+				string sl = f.IsUpgrading ? "晋升中" : "营造中";
+				cv.AddChild(new Label { Text = $"{sl} {f.ConstructionProgress}/{FacilityTable.GetInfo(f.Type).BuildDays}日" }.WithFont(12, UITheme.TextOrange));
+			}
+
+			var wrapper = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; wrapper.AddChild(card);
+			c.AddChild(wrapper);
+			c.AddChild(SP(6));
 		}
 	}
 
+	// ===================== TAB: COMPANIONS (4) =====================
 	// ===================== TAB: COMPANIONS (4) =====================
 
 	void RefreshCompanions()
