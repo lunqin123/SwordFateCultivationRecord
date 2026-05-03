@@ -50,6 +50,7 @@ public partial class MainUI : Control
 
 	// Recruitment
 	private Window _recruitPopup = null!;
+	private Window _tournamentConfirmPopup = null!;
 	private HBoxContainer _candidateRow = null!;
 	private Label _tournamentLabel = null!;
 
@@ -190,7 +191,7 @@ public partial class MainUI : Control
 		bottomHBox.AddChild(_nextDayBtn); _nextDayBtn.Pressed += () => { GM.NextDay(); RefreshAll(); };
 		bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
 		var recruitBtn = Btn("入门大比"); recruitBtn.CustomMinimumSize = new Vector2I(110, 38);
-		recruitBtn.Pressed += () => { UIAnimator.ButtonPress(recruitBtn); GM.ScheduleRecruitTournament(); };
+		recruitBtn.Pressed += () => { UIAnimator.ButtonPress(recruitBtn); _tournamentConfirmPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_tournamentConfirmPopup.GetChild(0)); };
 		bottomHBox.AddChild(recruitBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 		_bgmIndicator = new Button { Text = "♪", Alignment = HorizontalAlignment.Center };
 		_bgmIndicator.AddThemeFontSizeOverride("font_size", 10); _bgmIndicator.AddThemeColorOverride("font_color", new Color(0.4f, 0.6f, 0.4f));
@@ -202,6 +203,7 @@ public partial class MainUI : Control
 
 		BuildPopups();
 		BuildRecruitPopup();
+		BuildTournamentConfirmPopup();
 		BuildSmartAssignPopup();
 		BuildFacilityDetailPopup();
 
@@ -308,6 +310,30 @@ public partial class MainUI : Control
 		cancelBtn.Pressed += () => { _recruitPopup.Hide(); GM.CancelRecruit(); };
 		var bc2 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc2.AddChild(cancelBtn); rv.AddChild(bc2); rv.AddChild(SP(8));
 	}
+	void BuildTournamentConfirmPopup()
+	{
+		_tournamentConfirmPopup = new Window { Title = "入门大比", Size = new Vector2I(380, 200), Visible = false, Exclusive = true, Unresizable = true };
+		_tournamentConfirmPopup.CloseRequested += () => _tournamentConfirmPopup.Hide();
+		AddChild(_tournamentConfirmPopup);
+		var cv = new VBoxContainer(); cv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); _tournamentConfirmPopup.AddChild(cv);
+		cv.AddChild(SP(14));
+		cv.AddChild(new Label { Text = "是否举行入门大比？", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(16, UITheme.Gold));
+		cv.AddChild(SP(6));
+		cv.AddChild(new Label { Text = "广发英雄帖，七日后召开选拔大会（消耗1日）", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+		cv.AddChild(SP(14));
+		var btnRow = new HBoxContainer(); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; btnRow.AddChild(bc);
+		var okBtn = new Button { Text = "确定", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 36) };
+		okBtn.AddThemeFontSizeOverride("font_size", 14); okBtn.AddThemeColorOverride("font_color", UITheme.Gold); okBtn.AddThemeColorOverride("font_hover_color", new Color(1,1,1));
+		okBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); okBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		okBtn.Pressed += () => { _tournamentConfirmPopup.Hide(); AudioManager.PlayClick(); GM.ScheduleRecruitTournament(); };
+		bc.AddChild(okBtn); bc.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
+		var cancelBtn = new Button { Text = "取消", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 36) };
+		cancelBtn.AddThemeFontSizeOverride("font_size", 14); cancelBtn.AddThemeColorOverride("font_color", UITheme.TextDim);
+		cancelBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); cancelBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		cancelBtn.Pressed += () => _tournamentConfirmPopup.Hide();
+		bc.AddChild(cancelBtn); cv.AddChild(btnRow); cv.AddChild(SP(10));
+	}
+
 
 	void BuildSmartAssignPopup()
 	{
