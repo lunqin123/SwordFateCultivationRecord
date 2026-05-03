@@ -490,14 +490,25 @@ public partial class MainUI : Control
 		var c = _tabContents[2]; c.FreeChildren();
 		c.AddChild(HL($"营造灵筑（Lv.{GM.SectLevel} 上限{GM.SectLevel * 2}座）", 18, UITheme.Gold)); c.AddChild(SP(10));
 		var facilities = Enum.GetValues<FacilityType>().Select(ft => (type: ft, info: FacilityTable.GetInfo(ft))).OrderBy(f => f.info.MinSectLevel > GM.SectLevel ? 1 : 0).ToList();
-		var cardGrid = new GridContainer { Columns = 4 }; c.AddChild(cardGrid);
+		var cardGrid = new GridContainer { Columns = 2 }; var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(cardGrid); c.AddChild(cc);
 		foreach (var (ft, info) in facilities)
 		{
-			bool locked = GM.SectLevel < info.MinSectLevel; var card = MakeCard(180); var cv = (VBoxContainer)card.GetChild(0);
-			var facTex = SpriteSheetManager.GetFacilityIcon(ft); var ir = new TextureRect { Texture = facTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(48, 48) }; var ic = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ic.AddChild(ir); cv.AddChild(ic); cv.AddChild(SP(4));
-			cv.AddChild(new Label { Text = info.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, locked ? UITheme.TextDim : UITheme.Gold));
-			if (locked) cv.AddChild(new Label { Text = $"🔒 需宗门Lv.{info.MinSectLevel}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.Crimson));
-			else { cv.AddChild(new Label { Text = $"{info.BaseBuildCost}灵石  {info.BuildDays}日", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim)); cv.AddChild(SP(4)); var btn = SmallBtn("营造"); var f2 = ft; btn.Pressed += () => GM.StartBuild(f2); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(btn); cv.AddChild(bc); }
+			bool locked = GM.SectLevel < info.MinSectLevel; var card = MakeCard(380); var cv = (VBoxContainer)card.GetChild(0);
+			var facTex = SpriteSheetManager.GetFacilityIcon(ft); var ir = new TextureRect { Texture = facTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCentered, CustomMinimumSize = new Vector2I(72, 72) }; var ic = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ic.AddChild(ir); cv.AddChild(ic); cv.AddChild(SP(6));
+			cv.AddChild(new Label { Text = info.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(18, locked ? UITheme.TextDim : UITheme.Gold));
+			if (locked) { cv.AddChild(SP(4)); cv.AddChild(new Label { Text = $"🔒 需宗门Lv.{info.MinSectLevel}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.Crimson)); cv.AddChild(SP(4)); cv.AddChild(new Label { Text = info.Description, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim)); }
+			else {
+			cv.AddChild(SP(4));
+			cv.AddChild(new Label { Text = info.Description, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+			cv.AddChild(SP(4));
+			cv.AddChild(new Label { Text = $"{info.BaseBuildCost}灵石  ·  {info.BuildDays}日竣工", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+			cv.AddChild(SP(6));
+			var btn = new Button { Text = "营 造", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(160, 40) };
+			btn.AddThemeFontSizeOverride("font_size", 15); btn.AddThemeColorOverride("font_color", UITheme.TextPrimary); btn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+			btn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); btn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			var f2 = ft; btn.Pressed += () => GM.StartBuild(f2);
+			var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(btn); cv.AddChild(bc);
+		}
 			cardGrid.AddChild(card);
 		}
 	}
@@ -571,38 +582,52 @@ public partial class MainUI : Control
 
 		var entries = GM.EventLogEntries;
 		var sb = new System.Text.StringBuilder();
-		sb.AppendLine("【宗门记事卷】");
 		if (entries != null && entries.Count > 0)
 		{
-			sb.AppendLine("(共" + entries.Count + "条)");
 			int lastDay = -1;
 			foreach (var e in entries)
 			{
 				if (e.Day != lastDay)
 				{
-					sb.AppendLine("—— 第" + e.Day + "日 ——");
+					sb.AppendLine("[color=#e8b83a]━━ 第" + e.Day + "日 ━━[/color]");
 					lastDay = e.Day;
 				}
-				sb.AppendLine("    " + e.Message);
+				string color = GetLogColor(e.Message);
+				sb.AppendLine("  " + color + e.Message + "[/color]");
 			}
 		}
 		else
 		{
-			sb.AppendLine("宗门初立，尚无记事。推演天时以记录宗门变迁。");
+			sb.AppendLine("[color=#888888]宗门初立，尚无记事。推演天时以记录宗门变迁。[/color]");
 		}
 
-		// Add label directly — outer _contentScroll already handles scrolling
-		var logLabel = new Label
+		var logLabel = new RichTextLabel
 		{
+			BbcodeEnabled = true,
 			Text = sb.ToString(),
-			AutowrapMode = TextServer.AutowrapMode.WordSmart,
-			CustomMinimumSize = new Vector2I(200, 0),
+			FitContent = true,
+			ScrollActive = false,
+			SizeFlagsHorizontal = SizeFlags.ExpandFill,
 		};
-		logLabel.AddThemeFontSizeOverride("font_size", 12);
-		logLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+		logLabel.AddThemeFontSizeOverride("normal_font_size", 12);
+		logLabel.AddThemeColorOverride("default_color", UITheme.TextPrimary);
 		c.AddChild(logLabel);
 	}
 
+	static string GetLogColor(string msg)
+	{
+		if (msg.Contains("加入") || msg.Contains("慕名而来")) return "[color=#55cc55]";
+		if (msg.Contains("离开") || msg.Contains("离去") || msg.Contains("遣散")) return "[color=#cc5555]";
+		if (msg.Contains("突破")) return "[color=#e8b83a]";
+		if (msg.Contains("营造") || msg.Contains("升级") || msg.Contains("竣工") || msg.Contains("晋升")) return "[color=#55aacc]";
+		if (msg.Contains("创立") || msg.Contains("宗门晋升")) return "[color=#e8b83a]";
+		if (msg.Contains("入门大比") || msg.Contains("大比")) return "[color=#e8903a]";
+		if (msg.Contains("是日") || msg.Contains("灵石")) return "[color=#888888]";
+		if (msg.Contains("道缘") || msg.Contains("结缘") || msg.Contains("牵线")) return "[color=#cc88cc]";
+		return "[color=#cccccc]";
+	}
+
+	// ===================== TAB: STATS (7) =====================
 	// ===================== TAB: STATS (7) =====================
 	// ===================== TAB: STATS (7) =====================
 
