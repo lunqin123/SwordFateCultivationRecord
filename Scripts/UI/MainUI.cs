@@ -785,23 +785,65 @@ public partial class MainUI : Control
 		else { c.AddChild(TB("尚无道缘。使用下方功能为弟子牵线搭桥。", UITheme.TextDim, 13)); c.AddChild(SP(10)); }
 
 		// Matchmaking
-		c.AddChild(HL("牵线搭桥", 16, UITheme.Gold)); c.AddChild(SP(6));
+		c.AddChild(HL("牵线搭桥", 16, UITheme.Gold)); c.AddChild(SP(8));
 		var singles = GM.Disciples.AllDisciples.Where(d => d.CompanionId < 0).ToList(); var males = singles.Where(d => d.IsMale).ToList(); var females = singles.Where(d => !d.IsMale).ToList();
-		if (males.Count == 0 || females.Count == 0) c.AddChild(TB(males.Count+females.Count == 0 ? "暂无单身弟子。" : "性别比例失衡。", UITheme.TextDim, 12));
-		else {
-			var mr = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
-			mr.AddChild(new Label { Text = "选择两位单身弟子:" }.WithFont(12, UITheme.TextPrimary));
-			mr.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
-			_matchMaleDrop = new OptionButton(); foreach (var m in males) _matchMaleDrop.AddItem("♂"+m.Name+" ("+m.FullRealmName+")"); mr.AddChild(_matchMaleDrop);
-			mr.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
-			mr.AddChild(new Label { Text = "+" }.WithFont(14, UITheme.Gold));
-			mr.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
-			_matchFemaleDrop = new OptionButton(); foreach (var f in females) _matchFemaleDrop.AddItem("♀"+f.Name+" ("+f.FullRealmName+")"); mr.AddChild(_matchFemaleDrop);
-			mr.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
-			var ib = SmallBtn("牵线"); ib.Pressed += () => { if (_matchMaleDrop.Selected < 0 || _matchFemaleDrop.Selected < 0) return; GM.IntroduceCompanions(males[_matchMaleDrop.Selected].Id, females[_matchFemaleDrop.Selected].Id); }; mr.AddChild(ib);
-			c.AddChild(mr); c.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 4) });
-			c.AddChild(TB("成功率受境界相近度、属性互补、年龄相仿、忠诚度影响。", UITheme.TextDim, 11));
+		if (males.Count == 0 || females.Count == 0) { c.AddChild(TB(males.Count+females.Count == 0 ? "暂无单身弟子。" : "性别比例失衡。", UITheme.TextDim, 12)); return; }
+
+		// Selection row
+		var selRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
+		selRow.AddChild(new Label { Text = "男弟子:" }.WithFont(12, UITheme.TextPrimary));
+		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
+		_matchMaleDrop = new OptionButton(); foreach (var m in males) _matchMaleDrop.AddItem(m.Name+" ("+m.FullRealmName+")"); selRow.AddChild(_matchMaleDrop);
+		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
+		selRow.AddChild(new Label { Text = "❤" }.WithFont(16, new Color(1,0.4f,0.5f)));
+		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
+		selRow.AddChild(new Label { Text = "女弟子:" }.WithFont(12, UITheme.TextPrimary));
+		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
+		_matchFemaleDrop = new OptionButton(); foreach (var f in females) _matchFemaleDrop.AddItem(f.Name+" ("+f.FullRealmName+")"); selRow.AddChild(_matchFemaleDrop);
+		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
+		var ib = SmallBtn("牵线"); ib.AddThemeColorOverride("font_color", UITheme.Gold);
+		ib.Pressed += () => { if (_matchMaleDrop.Selected < 0 || _matchFemaleDrop.Selected < 0) return; GM.IntroduceCompanions(males[_matchMaleDrop.Selected].Id, females[_matchFemaleDrop.Selected].Id); };
+		selRow.AddChild(ib);
+		c.AddChild(selRow); c.AddChild(SP(8));
+
+		// Detail panels for selected disciples
+		var detailRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		var md = _matchMaleDrop.Selected >= 0 ? males[_matchMaleDrop.Selected] : null;
+		var fd = _matchFemaleDrop.Selected >= 0 ? females[_matchFemaleDrop.Selected] : null;
+
+		// Build a detail panel for a disciple
+		VBoxContainer BuildDiscPanel(DiscipleData? d)
+		{
+			var p = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			if (d == null) { p.AddChild(new Label { Text = "请选择弟子", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim)); return p; }
+			var avC = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; avC.AddChild(MakeAvatarCircle(d.IsMale, 48)); p.AddChild(avC); p.AddChild(SP(3));
+			string gi = d.IsMale ? "♂" : "♀";
+			p.AddChild(new Label { Text = gi+" "+d.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.Gold));
+			p.AddChild(new Label { Text = d.FullRealmName, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, RealmColor(d.Realm)));
+			p.AddChild(new Label { Text = "天赋"+d.Talent+" 悟性"+d.Comprehension, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+			p.AddChild(new Label { Text = "体质"+d.Constitution+" 神识"+d.Spirit, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
+			p.AddChild(new Label { Text = "战力"+d.CombatPower+" 修为"+d.CultivationProgress.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextPrimary));
+			p.AddChild(new Label { Text = "心情"+BarsString(d.Mood,100,6)+" "+d.Mood.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d.Mood<20?UITheme.Crimson:UITheme.TextDim));
+			p.AddChild(new Label { Text = "体力"+BarsString(d.CurrentStamina,d.MaxStamina,6)+" "+d.CurrentStamina+"/"+d.MaxStamina, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d.CurrentStamina<=10?UITheme.TextOrange:UITheme.TextDim));
+			p.AddChild(new Label { Text = "任务: "+TaskNames[(int)d.CurrentTask], HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextBlue));
+			if (!string.IsNullOrEmpty(d.Background)) p.AddChild(new Label { Text = d.Background, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, new Color(0.65f,0.55f,0.75f)));
+			if (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait)) p.AddChild(new Label { Text = d.Trait, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextOrange));
+			return p;
 		}
+
+		var mlp = BuildDiscPanel(md); var mrp = BuildDiscPanel(fd);
+		detailRow.AddChild(mlp);
+		detailRow.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
+		detailRow.AddChild(mrp);
+		c.AddChild(detailRow);
+		c.AddChild(SP(4));
+
+		// Update panels when dropdown changes
+		_matchMaleDrop.ItemSelected += (_) => { if (_matchMaleDrop.Selected >= 0) { mlp.FreeChildren(); var np = BuildDiscPanel(males[_matchMaleDrop.Selected]); foreach (var ch in np.GetChildren().ToList()) { np.RemoveChild(ch); mlp.AddChild(ch); } np.QueueFree(); } };
+		_matchFemaleDrop.ItemSelected += (_) => { if (_matchFemaleDrop.Selected >= 0) { mrp.FreeChildren(); var np = BuildDiscPanel(females[_matchFemaleDrop.Selected]); foreach (var ch in np.GetChildren().ToList()) { np.RemoveChild(ch); mrp.AddChild(ch); } np.QueueFree(); } };
+
+		c.AddChild(SP(4));
+		c.AddChild(TB("成功率受境界相近度、属性互补、年龄相仿、忠诚度影响。", UITheme.TextDim, 11));
 	}
 
 	// ===================== TAB: QUESTS (5) =====================
