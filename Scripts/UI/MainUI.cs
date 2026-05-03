@@ -791,17 +791,17 @@ public partial class MainUI : Control
 
 		// Selection row
 		var selRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, Alignment = BoxContainer.AlignmentMode.Center };
-		selRow.AddChild(new Label { Text = "男弟子:" }.WithFont(12, UITheme.TextPrimary));
+		selRow.AddChild(new Label { Text = "男弟子:" }.WithFont(14, UITheme.TextPrimary));
 		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
 		_matchMaleDrop = new OptionButton(); foreach (var m in males) _matchMaleDrop.AddItem(m.Name+" ("+m.FullRealmName+")"); selRow.AddChild(_matchMaleDrop);
 		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
-		selRow.AddChild(new Label { Text = "❤" }.WithFont(16, new Color(1,0.4f,0.5f)));
+		selRow.AddChild(new Label { Text = "❤" }.WithFont(22, new Color(1,0.4f,0.5f)));
 		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
-		selRow.AddChild(new Label { Text = "女弟子:" }.WithFont(12, UITheme.TextPrimary));
+		selRow.AddChild(new Label { Text = "女弟子:" }.WithFont(14, UITheme.TextPrimary));
 		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(6, 0) });
 		_matchFemaleDrop = new OptionButton(); foreach (var f in females) _matchFemaleDrop.AddItem(f.Name+" ("+f.FullRealmName+")"); selRow.AddChild(_matchFemaleDrop);
 		selRow.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
-		var ib = SmallBtn("牵线"); ib.AddThemeColorOverride("font_color", UITheme.Gold);
+		var ib = new Button { Text = "牵 线", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 38) }; ib.AddThemeFontSizeOverride("font_size", 15); ib.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); ib.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover()); ib.AddThemeColorOverride("font_color", UITheme.Gold);
 		ib.Pressed += () => { if (_matchMaleDrop.Selected < 0 || _matchFemaleDrop.Selected < 0) return; GM.IntroduceCompanions(males[_matchMaleDrop.Selected].Id, females[_matchFemaleDrop.Selected].Id); };
 		selRow.AddChild(ib);
 		c.AddChild(selRow); c.AddChild(SP(8));
@@ -815,19 +815,22 @@ public partial class MainUI : Control
 		VBoxContainer BuildDiscPanel(DiscipleData? d)
 		{
 			var p = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-			if (d == null) { p.AddChild(new Label { Text = "请选择弟子", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim)); return p; }
-			var avC = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; avC.AddChild(MakeAvatarCircle(d.IsMale, 48)); p.AddChild(avC); p.AddChild(SP(3));
+			if (d == null) { p.AddChild(new Label { Text = "请选择弟子", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.TextDim)); return p; }
+			var avC = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; avC.AddChild(MakeAvatarCircle(d.IsMale, 68)); p.AddChild(avC); p.AddChild(SP(4));
 			string gi = d.IsMale ? "♂" : "♀";
-			p.AddChild(new Label { Text = gi+" "+d.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.Gold));
-			p.AddChild(new Label { Text = d.FullRealmName, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, RealmColor(d.Realm)));
-			p.AddChild(new Label { Text = "天赋"+d.Talent+" 悟性"+d.Comprehension, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
-			p.AddChild(new Label { Text = "体质"+d.Constitution+" 神识"+d.Spirit, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextDim));
-			p.AddChild(new Label { Text = "战力"+d.CombatPower+" 修为"+d.CultivationProgress.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextPrimary));
-			p.AddChild(new Label { Text = "心情"+BarsString(d.Mood,100,6)+" "+d.Mood.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d.Mood<20?UITheme.Crimson:UITheme.TextDim));
-			p.AddChild(new Label { Text = "体力"+BarsString(d.CurrentStamina,d.MaxStamina,6)+" "+d.CurrentStamina+"/"+d.MaxStamina, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, d.CurrentStamina<=10?UITheme.TextOrange:UITheme.TextDim));
-			p.AddChild(new Label { Text = "任务: "+TaskNames[(int)d.CurrentTask], HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextBlue));
-			if (!string.IsNullOrEmpty(d.Background)) p.AddChild(new Label { Text = d.Background, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, new Color(0.65f,0.55f,0.75f)));
-			if (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait)) p.AddChild(new Label { Text = d.Trait, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, UITheme.TextOrange));
+			p.AddChild(new Label { Text = gi+" "+d.Name, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(17, UITheme.Gold));
+			p.AddChild(new Label { Text = d.FullRealmName, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, RealmColor(d.Realm)));
+			p.AddChild(SP(2));
+			p.AddChild(new Label { Text = "天赋"+d.Talent+"  悟性"+d.Comprehension, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+			p.AddChild(new Label { Text = "体质"+d.Constitution+"  神识"+d.Spirit, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+			p.AddChild(SP(2));
+			p.AddChild(new Label { Text = "战力"+d.CombatPower+"  修为"+d.CultivationProgress.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextPrimary));
+			p.AddChild(new Label { Text = "心情"+BarsString(d.Mood,100,8)+" "+d.Mood.ToString("F0"), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, d.Mood<20?UITheme.Crimson:UITheme.TextDim));
+			p.AddChild(new Label { Text = "体力"+BarsString(d.CurrentStamina,d.MaxStamina,8)+" "+d.CurrentStamina+"/"+d.MaxStamina, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, d.CurrentStamina<=10?UITheme.TextOrange:UITheme.TextDim));
+			p.AddChild(SP(2));
+			p.AddChild(new Label { Text = "任务: "+TaskNames[(int)d.CurrentTask], HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
+			if (!string.IsNullOrEmpty(d.Background)) p.AddChild(new Label { Text = d.Background, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, new Color(0.65f,0.55f,0.75f)));
+			if (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait)) p.AddChild(new Label { Text = d.Trait, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextOrange));
 			return p;
 		}
 

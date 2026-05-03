@@ -227,6 +227,35 @@ public class CompanionSystem
         return Math.Clamp(score, 0.1, 0.95);
     }
 
+    /// <summary>Random chance for two single disciples to form a companion bond naturally.</summary>
+    public void TryRandomPairing(List<DiscipleData> allDisciples)
+    {
+        // ~2% base chance per day
+        if (_rng.NextDouble() > 0.02) return;
+
+        var singleMales = allDisciples.Where(d => d.CompanionId < 0 && d.IsMale && !d.IsMarried).ToList();
+        var singleFemales = allDisciples.Where(d => d.CompanionId < 0 && !d.IsMale && !d.IsMarried).ToList();
+        if (singleMales.Count == 0 || singleFemales.Count == 0) return;
+
+        var d1 = singleMales[_rng.Next(singleMales.Count)];
+        var d2 = singleFemales[_rng.Next(singleFemales.Count)];
+
+        double compat = CalculateCompatibility(d1, d2);
+        if (_rng.NextDouble() > compat * 0.7) return; // lower threshold for natural pairing
+
+        var companion = new CompanionData
+        {
+            Id = _nextId++,
+            DiscipleId1 = d1.Id,
+            DiscipleId2 = d2.Id,
+            Affection = 20 + _rng.NextDouble() * 15, // 20-35 starting affection
+        };
+        d1.CompanionId = companion.Id;
+        d2.CompanionId = companion.Id;
+        _companions.Add(companion);
+        EventBus.EmitNotification("道缘初结", $"{d1.Name}与{d2.Name}朝夕相处，日久生情，结下了道缘！");
+    }
+
     public void LoadState(List<CompanionData> companions)
     {
         _companions.Clear();

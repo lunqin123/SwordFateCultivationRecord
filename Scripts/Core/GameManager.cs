@@ -138,6 +138,7 @@ public partial class GameManager : Node
 		Resources.ApplyDailyIncome();
 		// 3. Companions: affection, mood, and dual cultivation bonuses
 		var compBonus = Companions.ProcessDaily(Disciples.AllDisciples.ToList(), Time.GetTotalDays());
+		Companions.TryRandomPairing(Disciples.AllDisciples.ToList());
 		// 4. Disciples: task effects + stamina
 		int powerGain = Disciples.ProcessDaily(Resources, Facilities.AllFacilities, SectLevel, compBonus);
 		SectPower += powerGain;
