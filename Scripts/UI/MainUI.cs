@@ -334,7 +334,8 @@ public partial class MainUI : Control
 		_facDetailPopup = new Window { Title = "灵筑管理", Size = new Vector2I(480, 420), Visible = false, Exclusive = true, Unresizable = true };
 		_facDetailPopup.CloseRequested += () => _facDetailPopup.Hide();
 		AddChild(_facDetailPopup);
-		// Content will be filled dynamically in ShowFacilityDetail
+		var root = new VBoxContainer(); root.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_facDetailPopup.AddChild(root);
 	}
 
 	void ShowFacilityDetail(FacilityData f)
@@ -846,7 +847,27 @@ public partial class MainUI : Control
 
 	// ===================== EVENT / DETAIL / SAVE / LOAD =====================
 
-	void OnEventTriggered(EventData e) { _eventPopup.Title = e.Title; _eventTitle.Text = e.Title; _eventDesc.Text = e.Description; _eventChoice1.Text = e.Choice1Text; _eventChoice1.Show(); _eventEffect1.Text = FormatOutcome(e.Choice1Outcome); _eventEffect1.Show(); _eventChoice2.Text = e.Choice2Text; _eventChoice2.Show(); _eventEffect2.Text = FormatOutcome(e.Choice2Outcome); _eventEffect2.Show(); _eventChoice3.Text = string.IsNullOrEmpty(e.Choice3Text) ? "无视" : e.Choice3Text; _eventChoice3.Show(); _eventEffect3.Text = e.Choice3Outcome != null ? FormatOutcome(e.Choice3Outcome) : ""; _eventEffect3.Show(); _dismissedBtn.Hide(); _eventPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_eventPopup.GetChild(0)); }
+	void OnEventTriggered(EventData e)
+	{
+		_eventPopup.Title = e.Title; _eventTitle.Text = e.Title; _eventDesc.Text = e.Description;
+		_eventChoice1.Text = e.Choice1Text; _eventChoice1.Show();
+		_eventChoice2.Text = e.Choice2Text; _eventChoice2.Show();
+		_eventChoice3.Text = string.IsNullOrEmpty(e.Choice3Text) ? "无视" : e.Choice3Text; _eventChoice3.Show();
+
+		// Show/hide effects based on FormationHall level
+		bool canSee = CanSeeEventEffects();
+		_eventEffect1.Text = canSee ? FormatOutcome(e.Choice1Outcome) : "???（需阵法殿占卜吉凶）";
+		_eventEffect2.Text = canSee ? FormatOutcome(e.Choice2Outcome) : "???（需阵法殿占卜吉凶）";
+		_eventEffect3.Text = canSee ? (e.Choice3Outcome != null ? FormatOutcome(e.Choice3Outcome) : "") : "???";
+		_eventEffect1.Show(); _eventEffect2.Show(); _eventEffect3.Show();
+		_dismissedBtn.Hide(); _eventPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_eventPopup.GetChild(0));
+	}
+
+	bool CanSeeEventEffects()
+	{
+		var fh = GM.Facilities.AllFacilities.FirstOrDefault(f => f.IsBuilt && f.Type == FacilityType.FormationHall);
+		return fh != null; // Lv.1+ reveals effects
+	}
 	void ResolveChoice(int i) { _eventChoice1.Hide(); _eventChoice2.Hide(); _eventChoice3.Hide(); _eventEffect1.Hide(); _eventEffect2.Hide(); _eventEffect3.Hide(); _dismissedBtn.Show(); GM.ResolveEvent(i); _dismissedBtn.Text = "合上"; }
 	void DismissEventPopup() { _eventPopup.Hide(); GM.DismissEvent(); RefreshAll(); }
 	public override void _Input(InputEvent e) { if (!IsInsideTree()) return; if (e.IsActionPressed("ui_cancel") && _eventPopup.Visible) DismissEventPopup(); }
