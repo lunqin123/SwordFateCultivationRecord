@@ -70,7 +70,7 @@ public static class UIAnimator
     public static void CardHoverEnter(Control control)
     {
         var t = control.CreateTween();
-        t.TweenProperty(control, "scale", new Vector2(1.03f, 1.03f), 0.15f)
+        t.TweenProperty(control, "scale", new Vector2(1.015f, 1.015f), 0.12f)
             .SetEase(Tween.EaseType.Out);
     }
 

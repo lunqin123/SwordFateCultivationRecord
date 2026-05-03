@@ -165,7 +165,7 @@ public partial class MainUI : Control
 		mainArea.AddChild(contentPanel);
 		_contentStack = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; contentPanel.AddChild(_contentStack);
 		_contentStack.AddChild(SP(14));
-		_contentScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		_contentScroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill, SizeFlagsHorizontal = SizeFlags.ExpandFill, ClipContents = true };
 		_contentStack.AddChild(_contentScroll);
 
 		// --- Bottom Bar ---
