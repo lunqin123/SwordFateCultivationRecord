@@ -14,11 +14,15 @@ public class SectQuestData
 {
     public int Id { get; set; }
     public QuestType Type { get; set; }
+    public int Tier { get; set; } = 1; // 1=凡品 2=良品 3=优品 4=极品
     public string Title { get; set; } = "";
     public string Description { get; set; } = "";
     public int TargetCount { get; set; }
     public int CurrentCount { get; set; }
     public bool Completed { get; set; }
+
+    public string TierLabel => Tier switch { 1 => "凡品", 2 => "良品", 3 => "优品", 4 => "极品", _ => "?" };
+    public Color TierColor => Tier switch { 1 => new Color(0.7f, 0.7f, 0.7f), 2 => new Color(0.3f, 0.8f, 0.3f), 3 => new Color(0.3f, 0.5f, 1.0f), 4 => new Color(0.9f, 0.5f, 0.0f), _ => new Color(0.7f, 0.7f, 0.7f) };
 
     // Rewards
     public int RewardReputation { get; set; }

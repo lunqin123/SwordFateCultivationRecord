@@ -723,11 +723,45 @@ public partial class MainUI : Control
 
 	void RefreshQuests()
 	{
-		var c = _tabContents[5]; c.FreeChildren(); var completed = GM.Quests.AllQuests.Count(q => q.Completed);
-		c.AddChild(HL($"宗门令（{completed}/{GM.Quests.AllQuests.Count}完成）", 18, UITheme.Gold)); c.AddChild(SP(10));
+		var c = _tabContents[5]; c.FreeChildren();
+		int completed = GM.Quests.AllQuests.Count(q => q.Completed);
+		int maxTier = SectQuestSystem.GetMaxTier(GM);
+		string tierDesc = maxTier switch { 1 => "凡品", 2 => "凡品·良品", 3 => "凡品~优品", _ => "凡品~极品" };
+		c.AddChild(HL($"宗门令（{completed}/{GM.Quests.AllQuests.Count}完成）", 18, UITheme.Gold));
+		c.AddChild(TB($"可接品级: {tierDesc}", UITheme.TextDim, 11));
+		c.AddChild(SP(10));
 		if (GM.Quests.AllQuests.Count == 0) { c.AddChild(TB("暂无宗门令。", UITheme.TextDim, 13)); return; }
-		var cg = new GridContainer { Columns = 2 }; c.AddChild(cg);
-		foreach (var q in GM.Quests.AllQuests) { var card = MakeCard(300); var cv = (VBoxContainer)card.GetChild(0); cv.AddChild(new Label { Text = q.Completed ? $"✓ {q.Title}" : q.Title, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, q.Completed ? UITheme.TextGreen : UITheme.Gold)); cv.AddChild(new Label { Text = q.Description, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextPrimary)); cv.AddChild(new Label { Text = q.ProgressText, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextBlue)); cv.AddChild(new Label { Text = $"奖励: {q.RewardText}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextGreen)); cg.AddChild(card); }
+
+		foreach (var q in GM.Quests.AllQuests)
+		{
+			var card = MakeCard(500); var cv = (VBoxContainer)card.GetChild(0);
+
+			// Top row: title + tier badge + status
+			var topRow = new HBoxContainer();
+			var tierBadge = new Label { Text = $" [{q.TierLabel}] " };
+			tierBadge.AddThemeFontSizeOverride("font_size", 11); tierBadge.AddThemeColorOverride("font_color", q.TierColor);
+			topRow.AddChild(tierBadge);
+			topRow.AddChild(new Label { Text = q.Title }.WithFont(15, q.Completed ? UITheme.TextGreen : UITheme.Gold));
+			topRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+			topRow.AddChild(new Label { Text = q.Completed ? "✓ 已完成" : "进行中" }.WithFont(10, q.Completed ? UITheme.TextGreen : UITheme.TextOrange));
+			cv.AddChild(topRow);
+
+			cv.AddChild(new Label { Text = q.Description }.WithFont(12, UITheme.TextPrimary));
+			cv.AddChild(SP(4));
+
+			// Progress bar
+			var progRow = new HBoxContainer();
+			progRow.AddChild(new Label { Text = $"进度: " }.WithFont(11, UITheme.TextDim));
+			double ratio = q.TargetCount > 0 ? Math.Clamp((double)q.CurrentCount / q.TargetCount, 0, 1) : 0;
+			var bar = new ColorRect { CustomMinimumSize = new Vector2I((int)(ratio * 300), 8), Color = q.Completed ? UITheme.TextGreen : UITheme.TextBlue };
+			progRow.AddChild(bar);
+			progRow.AddChild(new Label { Text = $" {q.CurrentCount}/{q.TargetCount}" }.WithFont(11, UITheme.TextDim));
+			cv.AddChild(progRow);
+
+			cv.AddChild(SP(4));
+			cv.AddChild(new Label { Text = $"赏赐: {q.RewardText}" }.WithFont(11, UITheme.TextGreen));
+			c.AddChild(card); c.AddChild(SP(6));
+		}
 	}
 
 	// ===================== TAB: LOG (6) =====================
