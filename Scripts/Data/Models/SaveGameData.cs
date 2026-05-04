@@ -37,6 +37,7 @@ public class SaveGameData
     public List<SectQuestData> Quests { get; set; } = new();
     public List<EquipmentData> Equipment { get; set; } = new();
     public PlotProgress PlotProgress { get; set; } = new();
+    public AchievementProgress AchievementProgress { get; set; } = new();
     public int RngSeed { get; set; }
 }
 

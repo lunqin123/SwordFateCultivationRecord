@@ -1101,6 +1101,28 @@ public partial class MainUI : Control
 		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
 		c.AddChild(HL("门令分布", 16, UITheme.Gold)); c.AddChild(SP(6));
 		var tc = new int[9]; foreach (var d in GM.Disciples.AllDisciples) tc[(int)d.CurrentTask]++; for (int i = 0; i < TaskNames.Length; i++) if (tc[i] > 0) c.AddChild(new Label { Text = $"{TaskNames[i]}: {tc[i]}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextPrimary));
+
+		// Achievements
+		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
+		c.AddChild(HL($"成就 ({GM.Achievements.Progress.TotalUnlocked}/{GM.Achievements.TotalCount})", 16, UITheme.Gold)); c.AddChild(SP(6));
+		var catNames = new Dictionary<AchievementCategory, string> {
+			[AchievementCategory.SectGrowth] = "宗门发展", [AchievementCategory.DiscipleTraining] = "弟子培养",
+			[AchievementCategory.ResourceWealth] = "资源积累", [AchievementCategory.PlotProgress] = "剧情推进",
+			[AchievementCategory.Companionship] = "道侣情缘", [AchievementCategory.Exploration] = "秘境探索",
+			[AchievementCategory.Challenge] = "挑战成就"
+		};
+		foreach (var cat in catNames)
+		{
+			var achievements = AchievementTable.All.Where(a => a.Category == cat.Key).ToList();
+			int unlocked = achievements.Count(a => GM.Achievements.Progress.UnlockedIds.Contains(a.Id));
+			c.AddChild(new Label { Text = $"{cat.Value}: {unlocked}/{achievements.Count}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim));
+			foreach (var a in achievements)
+			{
+				bool done = GM.Achievements.Progress.UnlockedIds.Contains(a.Id);
+				string line = done ? $"✓ {a.Title}" : (a.IsHidden ? "??? 未解锁" : $"○ {a.Title} — {a.Description}");
+				c.AddChild(new Label { Text = line, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(10, done ? UITheme.TextGreen : UITheme.TextDim));
+			}
+		}
 	}
 
 		// ===================== TAB: PLOT (8) =====================

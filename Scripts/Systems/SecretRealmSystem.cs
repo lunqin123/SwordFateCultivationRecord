@@ -90,6 +90,7 @@ public class SecretRealmSystem
         if (CurrentRealm.CurrentRoom >= CurrentRealm.TotalRooms)
         {
             CurrentRealm.IsActive = false;
+			GameManager.Instance.Achievements.RecordExploration();
             // Final bonus based on treasure score
             int bonus = CurrentRealm.TreasureScore * 10;
             gm.Resources.Add(ResourceType.SpiritStone, bonus);
@@ -271,5 +272,6 @@ public class SecretRealmSystem
     public void CancelRealm()
     {
         CurrentRealm.IsActive = false;
+			GameManager.Instance.Achievements.RecordExploration();
     }
 }

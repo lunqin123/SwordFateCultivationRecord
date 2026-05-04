@@ -113,6 +113,7 @@ public class SaveLoadManager
             Equipment = gm.AllEquipment.ToList(),
             EventLog = gm.EventLogEntries.ToList(),
             PlotProgress = gm.Plot.ExportProgress(),
+            AchievementProgress = gm.Achievements.ExportProgress(),
         };
         return data;
     }
@@ -138,6 +139,7 @@ public class SaveLoadManager
         gm.EventLogEntries.Clear();
         if (data.EventLog != null) gm.EventLogEntries.AddRange(data.EventLog);
         gm.Plot.LoadProgress(data.PlotProgress ?? new PlotProgress());
+        gm.Achievements.LoadProgress(data.AchievementProgress ?? new AchievementProgress());
     }
 }
 

@@ -15,6 +15,7 @@ public partial class GameManager : Node
 	public SectQuestSystem Quests { get; private set; } = new();
 	public PlotSystem Plot { get; private set; } = new();
 	public SecretRealmSystem Realm { get; private set; } = new();
+	public AchievementSystem Achievements { get; private set; } = new();
 	public List<EquipmentData> AllEquipment { get; private set; } = new();
 
 	// Sect state
@@ -194,6 +195,7 @@ public partial class GameManager : Node
 		Quests.CheckProgress(this);
 		Quests.RefreshCompleted(this);
 		Plot.CheckProgress(this);
+		CheckAchievements();
 
 		// 9. Advance day
 		Time.AdvanceDay();
@@ -212,6 +214,13 @@ public partial class GameManager : Node
 				EventBus.EmitEventChoiceRequired(PendingEvent);
 			}
 		}
+	}
+
+	void CheckAchievements()
+	{
+		var unlocked = Achievements.CheckAll(this);
+		foreach (var ach in unlocked)
+			EventBus.EmitNotification("成就解锁", $"「{ach.Title}」\n{ach.Description}\n声望+{ach.RewardReputation}");
 	}
 
 	// ====== Outer Disciples ======
@@ -263,6 +272,7 @@ public partial class GameManager : Node
 				PendingRecruitCandidates = new List<DiscipleData> { candidate };
 				TournamentPicksRemaining = 1;
 				LogEvent($"一名外门弟子勤修苦练，展现出惊人天赋！");
+			Achievements.TriggerOuterPromotion();
 				EventBus.EmitNotification("外门英才", $"外门弟子「{candidate.Name}」展现出过人天赋，可破格收入内门！");
 				EventBus.EmitRecruitSelectionReady(PendingRecruitCandidates);
 			}
@@ -423,6 +433,7 @@ public partial class GameManager : Node
 			Trait = "气运之子",
 		};
 		LogEvent($"天降异象！一位气运之子{d.Name}出现在内门选拔中！");
+		Achievements.TriggerFortuneChild();
 		return d;
 	}
 
