@@ -565,11 +565,47 @@ public partial class MainUI : Control
 
 		var statGrid = new GridContainer { Columns = 4 }; c.AddChild(CenteredGrid(statGrid));
 		StatCard(statGrid, "宗门等级", $"Lv.{GM.SectLevel}", UITheme.Gold); StatCard(statGrid, "声望", GM.SectReputation.ToString(), UITheme.TextBlue);
-		StatCard(statGrid, "战力", GM.SectPower.ToString(), UITheme.TextOrange); StatCard(statGrid, "弟子", $"{GM.Disciples.Count}/{GM.MaxDisciples}", UITheme.TextGreen);
+		StatCard(statGrid, "战力", GM.SectPower.ToString(), UITheme.TextOrange); StatCard(statGrid, "内门", $"{GM.Disciples.Count}/{GM.MaxDisciples}", UITheme.TextGreen);
 		StatCard(statGrid, "灵筑", $"{GM.Facilities.AllFacilities.Count(f => f.IsBuilt)}座", UITheme.TextGreen);
 		StatCard(statGrid, "营造中", $"{GM.Facilities.AllFacilities.Count(f => f.IsUnderConstruction)}座", UITheme.TextOrange);
 		StatCard(statGrid, "道缘", $"{GM.Companions.AllCompanions.Count(c => c.IsMarried)}对", new Color(1.0f, 0.45f, 0.65f));
 		StatCard(statGrid, "法器库存", $"{GM.AllEquipment.Count(e => e.EquippedById < 0)}件", UITheme.TextBlue);
+		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
+
+		// 外门管理
+		c.AddChild(HL($"外门弟子: {GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}人", 16, UITheme.Gold)); c.AddChild(SP(6));
+		int gCnt = GM.OuterGatherCount, tCnt = GM.OuterTradeCount, iCnt = GM.OuterIdleCount;
+		double eff2 = GM.OuterEfficiency;
+		string effTag = eff2 >= 1.0 ? "" : $" (超限效率{eff2*100:F0}%)";
+		c.AddChild(new Label { Text = $"采集{gCnt}人: 灵草+{gCnt*0.22*eff2:F1}/d  矿石+{gCnt*0.16*eff2:F1}/d  经商{tCnt}人: 灵石+{tCnt*0.25*eff2:F1}/d  待命{iCnt}人: 无消耗{effTag}", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(12, UITheme.TextDim));
+		c.AddChild(SP(6));
+
+		// Role adjustment sliders
+		var roleRow = new HBoxContainer(); var rc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; roleRow.AddChild(rc);
+		rc.AddChild(new Label { Text = "采集" }.WithFont(11, UITheme.TextGreen));
+		var gatherSlider = new HSlider { CustomMinimumSize = new Vector2I(100, 16), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
+		gatherSlider.ValueChanged += (v) => { GM.SetOuterRoles((int)v, GM.OuterTradeRatio); RefreshOverview(); };
+		rc.AddChild(gatherSlider); rc.AddChild(new Label { Text = GM.OuterGatherRatio + "%" }.WithFont(11, UITheme.TextDim));
+		rc.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
+		rc.AddChild(new Label { Text = "经商" }.WithFont(11, UITheme.Gold));
+		var tradeSlider = new HSlider { CustomMinimumSize = new Vector2I(100, 16), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
+		tradeSlider.ValueChanged += (v) => { GM.SetOuterRoles(GM.OuterGatherRatio, (int)v); RefreshOverview(); };
+		rc.AddChild(tradeSlider); rc.AddChild(new Label { Text = GM.OuterTradeRatio + "%" }.WithFont(11, UITheme.TextDim));
+		c.AddChild(roleRow); c.AddChild(SP(6));
+
+		var outerBtnRow = new HBoxContainer();
+		outerBtnRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+		var recruitOuterBtn = new Button { Text = "招募外门 (灵石)", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 36) };
+		recruitOuterBtn.AddThemeFontSizeOverride("font_size", 13); recruitOuterBtn.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+		recruitOuterBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+		recruitOuterBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); recruitOuterBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		int recruitCost = 50 + GM.OuterDiscipleCount / 5;
+		recruitOuterBtn.Text = $"招募外门 ({recruitCost}灵石)";
+		recruitOuterBtn.Pressed += () => { AudioManager.PlayClick(); GM.RecruitOuterDisciples(); RefreshOverview(); };
+		outerBtnRow.AddChild(recruitOuterBtn);
+		outerBtnRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+		c.AddChild(outerBtnRow);
+
 		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
 
 		c.AddChild(HL("资源储备", 16, UITheme.Gold)); c.AddChild(SP(6));

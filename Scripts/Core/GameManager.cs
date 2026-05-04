@@ -25,11 +25,19 @@ public partial class GameManager : Node
 	public int MaxDisciples { get; set; } = 5;
 	public int OuterDiscipleCount { get; set; }
 	public int MaxOuterDisciples => SectLevel * 15 + 5 + Facilities.AllFacilities.Where(f => f.IsBuilt).Sum(f => f.ManagementBonus);
-	public int OuterDiscipleHerbRate => OuterDiscipleCount / 5;   // 每5外门弟子日产灵草1
-	public int OuterDiscipleOreRate => OuterDiscipleCount / 7;    // 每7外门弟子日产矿石1
-	public int OuterDiscipleCostPerDay => OuterDiscipleCount / 3; // 每3外门弟子日耗灵石1
+
+	// 外门分工比例 (0-100, 总和不超过100, 余数为待命)
+	public int OuterGatherRatio = 60;  // 采集：产灵草+矿石
+	public int OuterTradeRatio = 20;   // 经商：产灵石
+	// 待命(闲置): 100 - gather - trade, 不产出也不消耗
+	public int OuterIdleRatio => 100 - OuterGatherRatio - OuterTradeRatio;
+
+	public int OuterGatherCount => OuterDiscipleCount * OuterGatherRatio / 100;
+	public int OuterTradeCount => OuterDiscipleCount * OuterTradeRatio / 100;
+	public int OuterIdleCount => OuterDiscipleCount - OuterGatherCount - OuterTradeCount;
+
 	public double OuterEfficiency => OuterDiscipleCount <= MaxOuterDisciples ? 1.0 : Math.Max(0.3, 1.0 - (OuterDiscipleCount - MaxOuterDisciples) * 0.05);
-	private double _herbAccum, _oreAccum;
+	private double _herbAccum, _oreAccum, _tradeAccum;
 
 	public bool IsInitialized { get; private set; }
 	public EventData? PendingEvent { get; private set; }
@@ -208,28 +216,85 @@ public partial class GameManager : Node
 
 	// ====== Outer Disciples ======
 
-	private double _outerGrowthAccum;
+	private double _outerGrowthAccum, _outerPromoteAccum;
 	private void ProcessOuterDisciples()
 	{
 		double eff = OuterEfficiency;
-		// Production
-		_herbAccum += OuterDiscipleCount * 0.20 * eff;
-		_oreAccum += OuterDiscipleCount * 0.15 * eff;
+		int gather = OuterGatherCount, trade = OuterTradeCount, idle = OuterIdleCount;
+
+		// Gathering: herbs + ore
+		_herbAccum += gather * 0.22 * eff;
+		_oreAccum += gather * 0.16 * eff;
 		int herbGain = (int)_herbAccum; if (herbGain > 0) { Resources.Add(ResourceType.Herb, herbGain); _herbAccum -= herbGain; }
 		int oreGain = (int)_oreAccum; if (oreGain > 0) { Resources.Add(ResourceType.Ore, oreGain); _oreAccum -= oreGain; }
-		// Maintenance cost
-		int cost = Math.Max(0, (int)Math.Ceiling(OuterDiscipleCount * 0.3 / eff));
+
+		// Trading: spirit stones
+		_tradeAccum += trade * 0.25 * eff;
+		int tradeGain = (int)_tradeAccum; if (tradeGain > 0) { Resources.Add(ResourceType.SpiritStone, tradeGain); _tradeAccum -= tradeGain; }
+
+		// Maintenance: gather+trade cost spirit stones (idle costs nothing)
+		int activeCount = gather + trade;
+		int cost = Math.Max(0, (int)Math.Ceiling(activeCount * 0.25 / eff));
 		if (cost > 0) Resources.Spend(ResourceType.SpiritStone, cost);
-		// Passive growth: reputation + GuestHall attract outer disciples
+
+		// Passive growth
 		int guestBonus = Facilities.AllFacilities.Where(f => f.IsBuilt && f.Type == FacilityType.GuestHall).Sum(f => f.Level);
 		_outerGrowthAccum += SectReputation * 0.002 + guestBonus * 0.05;
 		if (_outerGrowthAccum >= 1) { int gain = (int)_outerGrowthAccum; OuterDiscipleCount += gain; _outerGrowthAccum -= gain; }
-		// Natural attrition if over capacity
+
+		// Over-capacity attrition
 		if (OuterDiscipleCount > MaxOuterDisciples && MaxOuterDisciples > 0)
 		{
 			int overflow = OuterDiscipleCount - MaxOuterDisciples;
 			if (_rng.NextDouble() < overflow * 0.03) OuterDiscipleCount = Math.Max(MaxOuterDisciples, OuterDiscipleCount - 1);
 		}
+
+		// Promotion to inner: idle outer disciples sometimes show talent
+		if (idle > 0)
+		{
+			_outerPromoteAccum += idle * 0.003;
+			if (_outerPromoteAccum >= 1 && Disciples.Count < MaxDisciples)
+			{
+				_outerPromoteAccum = 0;
+				var candidate = Disciples.GenerateCandidate();
+				// Boost stats slightly (they've been training in their spare time)
+				candidate.Talent = Math.Min(100, candidate.Talent + _rng.Next(3, 8));
+				candidate.Comprehension = Math.Min(100, candidate.Comprehension + _rng.Next(3, 8));
+				PendingRecruitCandidates = new List<DiscipleData> { candidate };
+				TournamentPicksRemaining = 1;
+				LogEvent($"一名外门弟子勤修苦练，展现出惊人天赋！");
+				EventBus.EmitNotification("外门英才", $"外门弟子「{candidate.Name}」展现出过人天赋，可破格收入内门！");
+				EventBus.EmitRecruitSelectionReady(PendingRecruitCandidates);
+			}
+		}
+	}
+
+	/// <summary>Spend spirit stones to actively recruit outer disciples.</summary>
+	public void RecruitOuterDisciples()
+	{
+		if (!IsInitialized) return;
+		if (OuterDiscipleCount >= MaxOuterDisciples)
+		{
+			EventBus.EmitNotification("启禀", $"外门弟子已满（上限{MaxOuterDisciples}人），需提升管理能力。");
+			return;
+		}
+		int cost = 50 + OuterDiscipleCount / 5;
+		if (!Resources.Spend(ResourceType.SpiritStone, cost)) return;
+
+		int gain = 3 + _rng.Next(3, 10) + SectReputation / 100;
+		OuterDiscipleCount = Math.Min(MaxOuterDisciples, OuterDiscipleCount + gain);
+		LogEvent($"花费{cost}灵石招募了{gain}名外门弟子");
+		AudioManager.PlayClick();
+		AdvanceTime(1);
+	}
+
+	/// <summary>Adjust outer disciple role ratios.</summary>
+	public void SetOuterRoles(int gather, int trade)
+	{
+		OuterGatherRatio = Math.Clamp(gather, 0, 100);
+		OuterTradeRatio = Math.Clamp(trade, 0, 100);
+		if (OuterGatherRatio + OuterTradeRatio > 100)
+			OuterTradeRatio = 100 - OuterGatherRatio;
 	}
 
 	// ====== Sect Level ======

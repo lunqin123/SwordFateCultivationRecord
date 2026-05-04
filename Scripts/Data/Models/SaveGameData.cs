@@ -19,6 +19,9 @@ public class SaveGameData
     public int SectPower { get; set; }
     public int MaxDisciples { get; set; } = 5;
     public int OuterDiscipleCount { get; set; }
+    public int OuterGatherRatio { get; set; } = 60;
+    public int OuterTradeRatio { get; set; } = 20;
+    public double TradeAccum { get; set; }
     public double HerbAccum { get; set; }
     public double OreAccum { get; set; }
     public double OuterGrowthAccum { get; set; }

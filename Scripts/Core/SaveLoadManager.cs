@@ -102,6 +102,8 @@ public class SaveLoadManager
             SectPower = gm.SectPower,
             MaxDisciples = gm.MaxDisciples,
             OuterDiscipleCount = gm.OuterDiscipleCount,
+            OuterGatherRatio = gm.OuterGatherRatio,
+            OuterTradeRatio = gm.OuterTradeRatio,
             Resources = gm.Resources.GetAllResources(),
             IncomePerDay = gm.Resources.GetAllIncome(),
             Disciples = gm.Disciples.AllDisciples.ToList(),
@@ -124,6 +126,8 @@ public class SaveLoadManager
         gm.SectPower = data.SectPower;
         gm.MaxDisciples = data.MaxDisciples;
         gm.OuterDiscipleCount = data.OuterDiscipleCount;
+        gm.OuterGatherRatio = data.OuterGatherRatio;
+        gm.OuterTradeRatio = data.OuterTradeRatio;
         gm.Resources.LoadState(data.Resources, data.IncomePerDay);
         gm.Disciples.LoadState(data.Disciples);
         gm.Facilities.LoadState(data.Facilities);
