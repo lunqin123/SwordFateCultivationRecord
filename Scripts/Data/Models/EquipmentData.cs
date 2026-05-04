@@ -14,7 +14,7 @@ public class EquipmentData
     public int SpiritBonus { get; set; }
     public int CombatBonus { get; set; }
     public double CultivationSpeedBonus { get; set; }
-    public int EquippedById { get; set; } = -1; // -1 = not equipped
+    public int EquippedById { get; set; } = -1;
 
     public string QualityName => Quality switch
     {
@@ -26,4 +26,19 @@ public class EquipmentData
     };
 
     public string FullName => $"[{QualityName}] {Name}";
+
+    public void UpgradeQuality()
+    {
+        if (Quality >= EquipmentQuality.Epic) return;
+        Quality = (EquipmentQuality)((int)Quality + 1);
+        double mult = Quality switch { EquipmentQuality.Uncommon => 1.5, EquipmentQuality.Rare => 2.5, EquipmentQuality.Epic => 4.0, _ => 1.0 };
+        double prevMult = Quality == EquipmentQuality.Uncommon ? 1.0 : Quality == EquipmentQuality.Rare ? 1.5 : 2.5;
+        double scale = mult / prevMult;
+        TalentBonus = Math.Max(1, (int)(TalentBonus * scale));
+        ComprehensionBonus = Math.Max(1, (int)(ComprehensionBonus * scale));
+        ConstitutionBonus = Math.Max(1, (int)(ConstitutionBonus * scale));
+        SpiritBonus = Math.Max(1, (int)(SpiritBonus * scale));
+        CombatBonus = Math.Max(1, (int)(CombatBonus * scale));
+        CultivationSpeedBonus = Math.Max(0.01, CultivationSpeedBonus * scale);
+    }
 }

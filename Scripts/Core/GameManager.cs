@@ -675,6 +675,23 @@ public partial class GameManager : Node
 		return true;
 	}
 
+	public bool UpgradeEquipment(int equipmentId)
+	{
+		var eq = AllEquipment.FirstOrDefault(e => e.Id == equipmentId);
+		if (eq == null || eq.Quality >= EquipmentQuality.Epic) return false;
+
+		int oreCost = eq.Quality switch { EquipmentQuality.Common => 30, EquipmentQuality.Uncommon => 80, _ => 200 };
+		int stoneCost = eq.Quality switch { EquipmentQuality.Common => 100, EquipmentQuality.Uncommon => 300, _ => 800 };
+
+		if (!Resources.Spend(ResourceType.Ore, oreCost) || !Resources.Spend(ResourceType.SpiritStone, stoneCost))
+			return false;
+
+		eq.UpgradeQuality();
+		RefreshEquipmentBonuses();
+		AudioManager.PlayUpgrade();
+		return true;
+	}
+
 	public void RefreshEquipmentBonuses()
 	{
 		foreach (var d in Disciples.AllDisciples)
