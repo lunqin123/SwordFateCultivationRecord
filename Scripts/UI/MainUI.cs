@@ -1530,7 +1530,11 @@ public partial class MainUI : Control
 		// Click anywhere to skip or confirm
 		ackBtn.Pressed += () => {
 			if (!textDone) { narrLabel.VisibleCharacters = total; t.Kill(); textDone = true; return; }
-			_plotPopup.Hide(); AudioManager.PlayClick(); GM.Plot.AcknowledgeStage(GM);
+			AudioManager.PlayClick();
+			_plotPopup.Hide();
+			// Use CallDeferred to let popup fully close before stage processing
+			var gm = GM;
+			Callable.From(() => gm.Plot.AcknowledgeStage(gm)).CallDeferred();
 		};
 		// Click on text area also skips
 		narrLabel.GuiInput += (e) => {
@@ -1555,6 +1559,7 @@ public partial class MainUI : Control
 
 	void OnPlotStageCompleted(PlotStageDef stage, string message)
 	{
+		if (_plotPopup == null || _plotPopup.GetChildCount() == 0) return;
 		_plotPopup.Title = stage.Title + " · 完成";
 		var root = (VBoxContainer)_plotPopup.GetChild(0);
 		root.FreeChildren();
