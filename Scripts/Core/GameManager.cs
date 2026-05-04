@@ -14,6 +14,7 @@ public partial class GameManager : Node
 	public CompanionSystem Companions { get; private set; } = new();
 	public SectQuestSystem Quests { get; private set; } = new();
 	public PlotSystem Plot { get; private set; } = new();
+	public SecretRealmSystem Realm { get; private set; } = new();
 	public List<EquipmentData> AllEquipment { get; private set; } = new();
 
 	// Sect state

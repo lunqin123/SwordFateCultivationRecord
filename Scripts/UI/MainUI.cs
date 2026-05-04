@@ -4,7 +4,7 @@ public partial class MainUI : Control
 {
 	private GameManager GM => GameManager.Instance;
 	private static readonly string[] TaskNames = { "修炼", "训练", "采集", "炼丹", "炼器", "授课", "守卫", "探索", "休息" };
-	private static readonly string[] TabLabels = { "总览", "弟子", "营造", "灵筑", "道缘", "门令", "记事", "卷宗" };
+	private static readonly string[] TabLabels = { "总览", "弟子", "营造", "灵筑", "道缘", "门令", "记事", "卷宗", "剧情" };
 	private int _activeTab;
 
 	// Top bar
@@ -16,12 +16,12 @@ public partial class MainUI : Control
 	private Button _nextDayBtn = null!;
 
 	// Sidebar
-	private readonly Button[] _sidebarBtns = new Button[8];
+	private readonly Button[] _sidebarBtns = new Button[9];
 
 	// Content
 	private VBoxContainer _contentStack = null!;
 	private ScrollContainer _contentScroll = null!;
-	private readonly VBoxContainer[] _tabContents = new VBoxContainer[8];
+	private readonly VBoxContainer[] _tabContents = new VBoxContainer[9];
 
 	// Popups
 	private Window _eventPopup = null!, _savePopup = null!, _gameOverPopup = null!, _detailPopup = null!, _hintPopup = null!;
@@ -55,6 +55,8 @@ public partial class MainUI : Control
 	private Label _tournamentLabel = null!;
 	private VBoxContainer _recruitCardContainer = null!;
 	private ColorRect _dayFlash = null!;
+	private Window _realmPopup = null!;
+	private Window _plotPopup = null!;
 
 	// Smart/Batch assign
 	private Window _smartPopup = null!;
@@ -70,7 +72,7 @@ public partial class MainUI : Control
 		OffsetLeft = 0; OffsetTop = 0; OffsetRight = 0; OffsetBottom = 0;
 		BuildUI(); ConnectSignals();
 		UITheme.ApplyTo(this);
-		if (GM.IsInitialized) RefreshAll();
+		if (GM.IsInitialized) { RefreshAll(); if (GM.Plot.ActiveStage != null) SwitchToTab(8); }
 	}
 
 	public override void _ExitTree()
@@ -82,6 +84,8 @@ public partial class MainUI : Control
 		EventBus.DiscipleRecruited -= OnDiscipleChanged;
 		EventBus.DiscipleDeparted -= OnDiscipleChanged;
 		EventBus.RecruitSelectionReady -= ShowRecruitSelection;
+		EventBus.PlotStageCompleted -= OnPlotStageCompleted;
+		EventBus.PlotStageActivated -= OnPlotStageActivated;
 	}
 
 	// ===================== BUILD =====================
@@ -115,7 +119,7 @@ public partial class MainUI : Control
 		sTitle.AddThemeFontSizeOverride("font_size", 11); sTitle.AddThemeColorOverride("font_color", UITheme.TextDim);
 		sidebarVBox.AddChild(sTitle); sidebarVBox.AddChild(SP(12));
 
-		var tabIcons = new[] { "总览.png","弟子.png","营造.png","灵筑.png","道缘.png","门令.png","记事.png","卷宗.png" };
+		var tabIcons = new[] { "总览.png","弟子.png","营造.png","灵筑.png","道缘.png","门令.png","记事.png","卷宗.png","剧情.png" };
 		for (int i = 0; i < TabLabels.Length; i++)
 		{
 			int tabIdx = i;
@@ -194,7 +198,10 @@ public partial class MainUI : Control
 		bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
 		var recruitBtn = Btn("入门大比"); recruitBtn.CustomMinimumSize = new Vector2I(110, 38);
 		recruitBtn.Pressed += () => { UIAnimator.ButtonPress(recruitBtn); _tournamentConfirmPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_tournamentConfirmPopup.GetChild(0)); };
-		bottomHBox.AddChild(recruitBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+		bottomHBox.AddChild(recruitBtn); bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+		var realmBtn = Btn("秘境探索"); realmBtn.CustomMinimumSize = new Vector2I(110, 38);
+		realmBtn.Pressed += () => { UIAnimator.ButtonPress(realmBtn); StartRealmExploration(); };
+		bottomHBox.AddChild(realmBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 		_bgmIndicator = new Button { Text = "♪", Alignment = HorizontalAlignment.Center };
 		_bgmIndicator.AddThemeFontSizeOverride("font_size", 10); _bgmIndicator.AddThemeColorOverride("font_color", new Color(0.4f, 0.6f, 0.4f));
 		_bgmIndicator.AddThemeColorOverride("font_hover_color", new Color(0.6f, 0.9f, 0.6f));
@@ -208,8 +215,10 @@ public partial class MainUI : Control
 		BuildTournamentConfirmPopup();
 		BuildSmartAssignPopup();
 		BuildFacilityDetailPopup();
+		BuildPlotPopup();
+		BuildRealmPopup();
 
-		for (int i = 0; i < 8; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		for (int i = 0; i < 9; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		SwitchToTab(0);
 
 		_dayFlash = new ColorRect { Color = new Color(1, 1, 1, 0), MouseFilter = MouseFilterEnum.Ignore };
@@ -474,7 +483,7 @@ public partial class MainUI : Control
 
 	void RefreshTabContent(int idx)
 	{
-		switch (idx) { case 0: RefreshOverview(); break; case 1: RefreshDisciples(); break; case 2: RefreshBuild(); break; case 3: RefreshFacilities(); break; case 4: RefreshCompanions(); break; case 5: RefreshQuests(); break; case 6: RefreshLog(); break; case 7: RefreshStats(); break; }
+		switch (idx) { case 0: RefreshOverview(); break; case 1: RefreshDisciples(); break; case 2: RefreshBuild(); break; case 3: RefreshFacilities(); break; case 4: RefreshCompanions(); break; case 5: RefreshQuests(); break; case 6: RefreshLog(); break; case 7: RefreshStats(); break; case 8: RefreshPlot(); break; }
 	}
 
 	// ===================== SIGNALS =====================
@@ -485,6 +494,8 @@ public partial class MainUI : Control
 		EventBus.EventChoiceRequired += OnEventTriggered; EventBus.GameNotification += OnGameNotification;
 		EventBus.DiscipleRecruited += OnDiscipleChanged; EventBus.DiscipleDeparted += OnDiscipleChanged;
 		EventBus.RecruitSelectionReady += ShowRecruitSelection;
+		EventBus.PlotStageCompleted += OnPlotStageCompleted;
+		EventBus.PlotStageActivated += OnPlotStageActivated;
 	}
 	void OnDayPassed(int _, int __, int ___)
 	{
@@ -1037,7 +1048,101 @@ public partial class MainUI : Control
 		var tc = new int[9]; foreach (var d in GM.Disciples.AllDisciples) tc[(int)d.CurrentTask]++; for (int i = 0; i < TaskNames.Length; i++) if (tc[i] > 0) c.AddChild(new Label { Text = $"{TaskNames[i]}: {tc[i]}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextPrimary));
 	}
 
-	// ===================== RECRUIT / SMART / BATCH =====================
+		// ===================== TAB: PLOT (8) =====================
+
+	void RefreshPlot()
+	{
+		var c = _tabContents[8]; c.FreeChildren();
+		c.AddChild(HL("仙途纪事", 18, UITheme.Gold)); c.AddChild(SP(10));
+		var stage = GM.Plot.ActiveStage;
+		var last = GM.Plot.LastCompletedStage;
+		if (stage != null)
+		{
+			c.AddChild(HL(stage.ChapterTitle, 14, UITheme.TextOrange)); c.AddChild(SP(6));
+			c.AddChild(HL(stage.Title, 20, UITheme.Gold)); c.AddChild(SP(12));
+			var narrative = new RichTextLabel { BbcodeEnabled = true, FitContent = true, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			narrative.AddThemeFontSizeOverride("normal_font_size", 14); narrative.AddThemeColorOverride("default_color", UITheme.TextPrimary);
+			narrative.Text = stage.Narrative.Replace("\n", "\n\n");
+			c.AddChild(narrative); c.AddChild(SP(16));
+			c.AddChild(HR()); c.AddChild(SP(8));
+			c.AddChild(HL("当前目标", 16, UITheme.Gold)); c.AddChild(SP(6));
+			c.AddChild(new Label { Text = stage.Objective, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(15, UITheme.TextBlue));
+			c.AddChild(SP(4));
+			c.AddChild(new Label { Text = stage.CompletionHint, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(12, UITheme.TextDim));
+			if (!stage.IsManualAcknowledge)
+			{
+				c.AddChild(SP(8));
+				foreach (var cond in stage.CompletionConditions)
+				{
+					string prog = GetConditionProgress(cond);
+					var pl = new Label { Text = prog, HorizontalAlignment = HorizontalAlignment.Center };
+					pl.AddThemeFontSizeOverride("font_size", 12);
+					pl.AddThemeColorOverride("font_color", IsConditionMet(cond) ? UITheme.TextGreen : UITheme.TextDim);
+					c.AddChild(pl);
+				}
+			}
+			c.AddChild(SP(12));
+			if (stage.IsManualAcknowledge)
+			{
+				var ackBtn = new Button { Text = "确认 · 踏上仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(240, 48) };
+				ackBtn.AddThemeFontSizeOverride("font_size", 18); ackBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+				ackBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+				ackBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); ackBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+				ackBtn.Pressed += () => { AudioManager.PlayClick(); GM.Plot.AcknowledgeStage(GM); RefreshPlot(); RefreshOverview(); };
+				var ackC = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ackC.AddChild(ackBtn); c.AddChild(ackC);
+			}
+			else c.AddChild(new Label { Text = "（目标达成后将自动推进剧情）", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim));
+		}
+		else if (last != null && GM.Plot.Progress.CompletedStageCount >= PlotTable.AllStages.Count)
+		{
+			var allChapters = PlotTable.AllStages.Select(s => s.ChapterTitle).Distinct().ToList();
+			c.AddChild(HL(string.Join(" · ", allChapters) + " —— 全部完成", 18, UITheme.Gold)); c.AddChild(SP(10));
+			c.AddChild(new Label { Text = "宗门在你的带领下从荒山小派一路成长为名动一方的修仙势力。\n\n修真界浩瀚无垠前方还有无尽的机遇与挑战。\n\n后续剧情卷册正在编纂中，敬请期待...", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(14, UITheme.TextPrimary));
+		}
+		else c.AddChild(new Label { Text = "暂无进行中的剧情。", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextDim));
+
+		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(8));
+		c.AddChild(HL("已完成章节", 16, UITheme.Gold)); c.AddChild(SP(6));
+		if (GM.Plot.Progress.CompletedStageIds.Count > 0)
+		{
+			foreach (int sid in GM.Plot.Progress.CompletedStageIds.OrderBy(x => x))
+			{
+				var sd = PlotTable.Get(sid);
+				if (sd != null) c.AddChild(new Label { Text = "\u2713 " + sd.Title, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextGreen));
+			}
+		}
+		else c.AddChild(new Label { Text = "尚未完成任何章节", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+	}
+
+	string GetConditionProgress(PlotCondition cond)
+	{
+		switch (cond.Type)
+		{
+			case PlotConditionType.DiscipleCount: return $"招募弟子: {GM.Disciples.Count}/{cond.TargetValue}";
+			case PlotConditionType.FacilityCount: int built = GM.Facilities.AllFacilities.Count(f => f.IsBuilt); return $"已建灵筑: {built}/{cond.TargetValue}";
+			case PlotConditionType.DiscipleRealm: var realm = (CultivationRealm)cond.TargetValue; string rn2 = realm switch { CultivationRealm.QiRefining => "练气期", CultivationRealm.Foundation => "筑基期", CultivationRealm.CoreFormation => "金丹期", _ => realm.ToString() }; bool has = GM.Disciples.AllDisciples.Any(d => (int)d.Realm >= cond.TargetValue); return $"拥有{rn2}弟子: {(has ? "已达成" : "未达成")}";
+			case PlotConditionType.Reputation: return $"声望: {GM.SectReputation}/{cond.TargetValue}";
+			case PlotConditionType.ResourceAmount: int val = GM.Resources.Get(cond.ResourceType); string rn3 = cond.ResourceType switch { ResourceType.SpiritStone => "灵石", ResourceType.Herb => "灵草", ResourceType.Ore => "矿石", ResourceType.Pill => "丹药", _ => cond.ResourceType.ToString() }; return $"{rn3}: {val}/{cond.TargetValue}";
+			case PlotConditionType.SectLevel: return $"宗门等级: {GM.SectLevel}/{cond.TargetValue}";
+			default: return "";
+		}
+	}
+
+	bool IsConditionMet(PlotCondition cond)
+	{
+		switch (cond.Type)
+		{
+			case PlotConditionType.DiscipleCount: return GM.Disciples.Count >= cond.TargetValue;
+			case PlotConditionType.FacilityCount: return GM.Facilities.AllFacilities.Count(f => f.IsBuilt) >= cond.TargetValue;
+			case PlotConditionType.DiscipleRealm: return GM.Disciples.AllDisciples.Any(d => (int)d.Realm >= cond.TargetValue);
+			case PlotConditionType.Reputation: return GM.SectReputation >= cond.TargetValue;
+			case PlotConditionType.ResourceAmount: return GM.Resources.Get(cond.ResourceType) >= cond.TargetValue;
+			case PlotConditionType.SectLevel: return GM.SectLevel >= cond.TargetValue;
+			default: return false;
+		}
+	}
+
+// ===================== RECRUIT / SMART / BATCH =====================
 
 		void ShowRecruitSelection(List<DiscipleData> candidates)
 	{
@@ -1197,6 +1302,8 @@ public partial class MainUI : Control
 		if (_smartPopup.Visible) { _smartPopup.Hide(); return; }
 		if (_facDetailPopup.Visible) { _facDetailPopup.Hide(); return; }
 		if (_bgmSelectPopup.Visible) { _bgmSelectPopup.Hide(); return; }
+		if (_realmPopup.Visible) { _realmPopup.Hide(); return; }
+		if (_plotPopup.Visible) { _plotPopup.Hide(); return; }
 		if (_gameOverPopup.Visible) return;
 		_settingsPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_settingsPopup.GetChild(0));
 	}
@@ -1252,7 +1359,164 @@ public partial class MainUI : Control
 		for (int i = 0; i < AudioManager.BgmNames.Count; i++) { int idx = i; var isCur = i == AudioManager.CurrentBgmIndex; var btn = new Button { Text = isCur ? $"▶ {AudioManager.BgmNames[i]}" : AudioManager.BgmNames[i], Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(0, 30) }; btn.AddThemeFontSizeOverride("font_size", 12); btn.AddThemeColorOverride("font_color", isCur ? UITheme.TextGreen : UITheme.TextPrimary); btn.AddThemeColorOverride("font_hover_color", UITheme.Gold); var sn = new StyleBoxFlat { BgColor = isCur ? new Color(0.10f, 0.18f, 0.10f) : new Color(0.13f, 0.10f, 0.18f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 }; var sh = new StyleBoxFlat { BgColor = new Color(0.22f, 0.18f, 0.32f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 }; btn.AddThemeStyleboxOverride("normal", sn); btn.AddThemeStyleboxOverride("hover", sh); btn.Pressed += () => { AudioManager.SetBgm(idx); _bgmSelectPopup.Hide(); RefreshBgmIndicator(); }; vbox.AddChild(btn); vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 2) }); }
 	}
 
-	// ===================== HELPERS =====================
+		// ===================== PLOT POPUP =====================
+
+	void BuildPlotPopup()
+	{
+		_plotPopup = new Window { Title = "仙途", Size = new Vector2I(680, 520), Visible = false, Exclusive = true };
+		_plotPopup.CloseRequested += () => _plotPopup.Hide();
+		var pv = new VBoxContainer(); pv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_plotPopup.AddChild(pv);
+		AddChild(_plotPopup);
+	}
+
+	void OnPlotStageCompleted(PlotStageDef stage, string message)
+	{
+		_plotPopup.Title = stage.Title + " · 完成";
+		var root = (VBoxContainer)_plotPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+		root.AddChild(HL(stage.ChapterTitle, 13, UITheme.TextOrange));
+		root.AddChild(HL("— " + stage.Title + " —", 22, UITheme.Gold));
+		root.AddChild(SP(8));
+		var msgLabel = new Label { Text = message, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
+		msgLabel.AddThemeFontSizeOverride("font_size", 14); msgLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+		root.AddChild(msgLabel);
+		root.AddChild(SP(16));
+		var closeBtn = new Button { Text = "继续仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 44) };
+		closeBtn.AddThemeFontSizeOverride("font_size", 16); closeBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+		closeBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+		closeBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); closeBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		closeBtn.Pressed += () => { _plotPopup.Hide(); RefreshAll(); };
+		var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(closeBtn);
+		root.AddChild(bc); root.AddChild(SP(10));
+		_plotPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_plotPopup.GetChild(0));
+	}
+
+	void OnPlotStageActivated(PlotStageDef stage)
+	{
+		if (_activeTab == 8) RefreshPlot();
+	}
+
+	// ===================== REALM POPUP =====================
+
+	void BuildRealmPopup()
+	{
+		_realmPopup = new Window { Title = "秘境探索", Size = new Vector2I(680, 500), Visible = false, Exclusive = true };
+		_realmPopup.CloseRequested += () => { _realmPopup.Hide(); GM.Realm.CancelRealm(); };
+		var rv = new VBoxContainer(); rv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_realmPopup.AddChild(rv);
+		AddChild(_realmPopup);
+	}
+
+	void StartRealmExploration()
+	{
+		var realm = GM.Realm.StartRealm(GM.SectLevel);
+		ShowRealmRoom();
+	}
+
+	void ShowRealmRoom()
+	{
+		var realm = GM.Realm.CurrentRealm;
+		if (!realm.IsActive) return;
+
+		var root = (VBoxContainer)_realmPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+		root.AddChild(HL(realm.RealmName, 20, UITheme.Gold));
+		root.AddChild(SP(4));
+
+		// Progress indicator
+		string progress = "探索进度: ";
+		for (int i = 0; i < realm.TotalRooms; i++)
+			progress += i < realm.CurrentRoom ? "●" : i == realm.CurrentRoom ? "▶" : "○";
+		root.AddChild(new Label { Text = progress, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.TextBlue));
+		root.AddChild(SP(10));
+
+		// Danger + treasure indicators
+		var statRow = new HBoxContainer();
+		var sc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; statRow.AddChild(sc);
+		sc.AddChild(new Label { Text = "⚔ 战力" + GM.SectPower }.WithFont(12, UITheme.TextOrange));
+		sc.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
+		sc.AddChild(new Label { Text = "💎 收获" + realm.TreasureScore }.WithFont(12, UITheme.Gold));
+		sc.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
+		sc.AddChild(new Label { Text = "❤ 损伤" + realm.DamageTaken }.WithFont(12, UITheme.Crimson));
+		root.AddChild(statRow); root.AddChild(SP(10));
+
+		var room = realm.Rooms[realm.CurrentRoom];
+		// Room description
+		string hint = string.IsNullOrEmpty(room.ImageHint) ? "" : room.ImageHint + " ";
+		root.AddChild(new Label { Text = hint + "第" + (realm.CurrentRoom + 1) + "关 · 危险Lv." + room.DangerLevel, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.TextOrange));
+		root.AddChild(SP(8));
+		root.AddChild(new Label { Text = room.Description, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(13, UITheme.TextPrimary));
+		root.AddChild(SP(14));
+
+		// Choice buttons
+		for (int i = 0; i < room.Choices.Count; i++)
+		{
+			int idx = i;
+			var choice = room.Choices[i];
+			string riskIcon = choice.RiskLevel switch { 1 => "🟢", 2 => "🟡", _ => "🔴" };
+			var btn = new Button { Text = riskIcon + " " + choice.Text, Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(500, 44) };
+			btn.AddThemeFontSizeOverride("font_size", 14); btn.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+			btn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+			btn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); btn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			btn.Pressed += () => OnRealmChoice(idx);
+			var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(btn);
+			root.AddChild(bc); root.AddChild(SP(6));
+		}
+
+		root.AddChild(SP(8));
+		var cancelBtn = SmallBtn("退出秘境");
+		cancelBtn.Pressed += () => { _realmPopup.Hide(); GM.Realm.CancelRealm(); };
+		var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(cancelBtn); root.AddChild(cc);
+		root.AddChild(SP(8));
+
+		_realmPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_realmPopup.GetChild(0));
+	}
+
+	void OnRealmChoice(int idx)
+	{
+		var result = GM.Realm.ProcessChoice(idx, GM);
+		var realm = GM.Realm.CurrentRealm;
+
+		// Show result popup
+		var root = (VBoxContainer)_realmPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+		root.AddChild(HL(result.success ? "✦ 成功 ✦" : "✗ 失败 ✗", 22, result.success ? UITheme.Gold : UITheme.Crimson));
+		root.AddChild(SP(8));
+		root.AddChild(new Label { Text = result.text, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(14, UITheme.TextPrimary));
+		root.AddChild(SP(16));
+
+		if (realm.IsActive)
+		{
+			var nextBtn = new Button { Text = "继续探索 →", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(200, 44) };
+			nextBtn.AddThemeFontSizeOverride("font_size", 16); nextBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			nextBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+			nextBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); nextBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			nextBtn.Pressed += ShowRealmRoom;
+			var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(nextBtn);
+			root.AddChild(bc);
+		}
+		else
+		{
+			root.AddChild(HL("秘境探索结束", 18, UITheme.Gold));
+			root.AddChild(SP(4));
+			root.AddChild(new Label { Text = $"总收获评分: {realm.TreasureScore}  损伤: {realm.DamageTaken}次", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextBlue));
+			root.AddChild(SP(10));
+			var closeBtn = new Button { Text = "返回宗门", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 44) };
+			closeBtn.AddThemeFontSizeOverride("font_size", 16); closeBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			closeBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+			closeBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); closeBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			closeBtn.Pressed += () => { _realmPopup.Hide(); RefreshAll(); };
+			var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(closeBtn);
+			root.AddChild(bc);
+		}
+		root.AddChild(SP(10));
+	}
+
+// ===================== HELPERS =====================
 
 	static Control SP(int h) => new Control { CustomMinimumSize = new Vector2I(0, h) };
 	static Label HL(string t, int fs, Color c) { var lb = new Label { Text = t, HorizontalAlignment = HorizontalAlignment.Center }; if (UITheme.TitleFont != null) lb.AddThemeFontOverride("font", UITheme.TitleFont); lb.AddThemeFontSizeOverride("font_size", fs); lb.AddThemeColorOverride("font_color", c); return lb; }
