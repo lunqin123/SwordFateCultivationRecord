@@ -217,38 +217,43 @@ class App(ctk.CTk):
         self.configure(cursor=cursor_map.get(mode, "arrow"))
 
     def _drag_start(self, e):
-        self._drag_x = e.x; self._drag_y = e.y
+        self._drag_sx = e.x_root   # 起始屏幕坐标
+        self._drag_sy = e.y_root
         self._drag_mode = self._get_resize_mode(e.x, e.y)
         if self._drag_mode is None:
             self._drag_mode = "move"
-        self._start_geo = self.geometry()
+        # 记录起始窗口几何
+        g = self.geometry()
+        parts = g.split("+")
+        self._start_w, self._start_h = map(int, parts[0].split("x"))
+        self._start_x = int(parts[1])
+        self._start_y = int(parts[2])
 
     def _drag_motion(self, e):
-        dx = e.x - self._drag_x; dy = e.y - self._drag_y
+        # 屏幕坐标总位移
+        tdx = e.x_root - self._drag_sx
+        tdy = e.y_root - self._drag_sy
+
         if self._drag_mode == "move":
-            self.geometry(f"+{e.x_root - self._drag_x}+{e.y_root - self._drag_y}")
-        elif self._drag_mode:
-            # 解析当前 geometry
-            g = self.geometry()
-            parts = g.split("+")
-            size = parts[0]; px = int(parts[1]); py = int(parts[2])
-            w, h = size.split("x"); w = int(w); h = int(h)
+            self.geometry(f"+{self._start_x + tdx}+{self._start_y + tdy}")
+            return
 
-            mode = self._drag_mode
-            nw, nh = w, h; nx, ny = px, py
+        mode = self._drag_mode
+        w0, h0 = self._start_w, self._start_h
+        x0, y0 = self._start_x, self._start_y
+        nw, nh = w0, h0
+        nx, ny = x0, y0
 
-            if "e" in mode: nw = max(w + dx, 200)
-            if "w" in mode: nw = max(w - dx, 200); nx = px + dx
-            if "s" in mode: nh = max(h + dy, 160)
-            if "n" in mode: nh = max(h - dy, 160); ny = py + dy
+        if "e" in mode: nw = max(w0 + tdx, 200)
+        if "s" in mode: nh = max(h0 + tdy, 160)
+        if "w" in mode:
+            nw = max(w0 - tdx, 200)
+            if nw > 200: nx = x0 + tdx
+        if "n" in mode:
+            nh = max(h0 - tdy, 160)
+            if nh > 160: ny = y0 + tdy
 
-            # 如果只有移动（方向键的初始按下但未检测到resize模式）
-            if nw == w and nh == h and nx == px and ny == py:
-                if mode == "move":
-                    self.geometry(f"+{e.x_root - self._drag_x}+{e.y_root - self._drag_y}")
-                return
-
-            self.geometry(f"{nw}x{nh}+{nx}+{ny}")
+        self.geometry(f"{int(nw)}x{int(nh)}+{int(nx)}+{int(ny)}")
 
     def _release(self, e):
         if self._drag_mode and self._drag_mode != "move":
