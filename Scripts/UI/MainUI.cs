@@ -1379,8 +1379,13 @@ public partial class MainUI : Control
 		root.AddChild(HL(stage.ChapterTitle, 13, UITheme.TextOrange));
 		root.AddChild(HL("— " + stage.Title + " —", 22, UITheme.Gold));
 		root.AddChild(SP(8));
-		var msgLabel = new Label { Text = message, HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart };
-		msgLabel.AddThemeFontSizeOverride("font_size", 14); msgLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+		var msgLabel = new RichTextLabel { BbcodeEnabled = true, FitContent = true, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		msgLabel.AddThemeFontSizeOverride("normal_font_size", 14); msgLabel.AddThemeColorOverride("default_color", UITheme.TextPrimary);
+		msgLabel.Text = message;
+		msgLabel.VisibleCharacters = 0;
+		int msgTotal = msgLabel.GetTotalCharacterCount();
+		var mt = msgLabel.CreateTween();
+		mt.TweenProperty(msgLabel, "visible_characters", msgTotal, Math.Max(1.0, msgTotal * 0.025)).SetEase(Tween.EaseType.Out);
 		root.AddChild(msgLabel);
 		root.AddChild(SP(16));
 		var closeBtn = new Button { Text = "继续仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 44) };
