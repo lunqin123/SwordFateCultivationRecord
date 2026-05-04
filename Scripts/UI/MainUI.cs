@@ -1510,22 +1510,32 @@ public partial class MainUI : Control
 		root.AddChild(narrLabel);
 		root.AddChild(SP(24));
 
-		// Placeholder for the acknowledge button (shows after text finishes)
+		// Acknowledge button — visible immediately, skip on click
 		var btnContainer = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		root.AddChild(btnContainer);
+		var ackBtn = new Button { Text = "踏上仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(220, 50) };
+		ackBtn.AddThemeFontSizeOverride("font_size", 20); ackBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+		ackBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+		ackBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); ackBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		btnContainer.AddChild(ackBtn);
+		bool textDone = false;
 
-		// Typewriter: characters appear paragraph by paragraph feel
+		// Typewriter at ~80 chars/sec (much faster)
 		int total = narrLabel.GetTotalCharacterCount();
+		double duration = Math.Max(1.5, total * 0.012);
 		var t = narrLabel.CreateTween();
-		t.TweenProperty(narrLabel, "visible_characters", total, Math.Max(2.0, total * 0.022)).SetEase(Tween.EaseType.Out);
-		t.Finished += () =>
-		{
-			var ackBtn = new Button { Text = "踏上仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(220, 50) };
-			ackBtn.AddThemeFontSizeOverride("font_size", 20); ackBtn.AddThemeColorOverride("font_color", UITheme.Gold);
-			ackBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
-			ackBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); ackBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
-			ackBtn.Pressed += () => { _plotPopup.Hide(); AudioManager.PlayClick(); GM.Plot.AcknowledgeStage(GM); };
-			btnContainer.AddChild(ackBtn);
+		t.TweenProperty(narrLabel, "visible_characters", total, duration).SetEase(Tween.EaseType.Out);
+		t.Finished += () => { textDone = true; };
+
+		// Click anywhere to skip or confirm
+		ackBtn.Pressed += () => {
+			if (!textDone) { narrLabel.VisibleCharacters = total; t.Kill(); textDone = true; return; }
+			_plotPopup.Hide(); AudioManager.PlayClick(); GM.Plot.AcknowledgeStage(GM);
+		};
+		// Click on text area also skips
+		narrLabel.GuiInput += (e) => {
+			if (e is InputEventMouseButton mb && mb.Pressed && !textDone)
+				{ narrLabel.VisibleCharacters = total; t.Kill(); textDone = true; }
 		};
 
 		_plotPopup.PopupCentered();
@@ -1558,7 +1568,7 @@ public partial class MainUI : Control
 		msgLabel.VisibleCharacters = 0;
 		int msgTotal = msgLabel.GetTotalCharacterCount();
 		var mt = msgLabel.CreateTween();
-		mt.TweenProperty(msgLabel, "visible_characters", msgTotal, Math.Max(1.0, msgTotal * 0.025)).SetEase(Tween.EaseType.Out);
+		mt.TweenProperty(msgLabel, "visible_characters", msgTotal, Math.Max(1.0, msgTotal * 0.012)).SetEase(Tween.EaseType.Out);
 		root.AddChild(msgLabel);
 		root.AddChild(SP(16));
 		var closeBtn = new Button { Text = "继续仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 44) };
