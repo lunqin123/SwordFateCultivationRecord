@@ -40,3 +40,4 @@ dist/
 DeepSeekDeskBand/bin/
 DeepSeekDeskBand/obj/
 *.uid
+build/
