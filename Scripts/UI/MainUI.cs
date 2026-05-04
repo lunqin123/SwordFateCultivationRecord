@@ -765,7 +765,53 @@ public partial class MainUI : Control
 	void RefreshFacilities()
 	{
 		var c = _tabContents[3]; c.FreeChildren();
-		c.AddChild(HL($"灵筑管理（{GM.Facilities.Count}座）", 18, UITheme.Gold)); c.AddChild(SP(12));
+		c.AddChild(HL($"灵筑与炼制", 18, UITheme.Gold)); c.AddChild(SP(8));
+
+		// Crafting section
+		{
+			var craftGrid = new GridContainer { Columns = 2 }; c.AddChild(CenteredGrid(craftGrid));
+
+			// Equipment crafting card
+			var eqCard = MakeCard(300); var ecv = (VBoxContainer)eqCard.GetChild(0);
+			ecv.AddChild(HL("⚒ 炼制法器", 16, UITheme.Gold)); ecv.AddChild(SP(6));
+			ecv.AddChild(new Label { Text = "消耗矿石与灵石，炼制一件随机法器\n品质越高消耗越大，属性越强", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim));
+			ecv.AddChild(SP(8));
+			var eqRow = new HBoxContainer(); var eqc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; eqRow.AddChild(eqc);
+			var eqInner = new HBoxContainer(); eqc.AddChild(eqInner);
+			foreach (var qual in new[] { (EquipmentQuality.Common, "凡品", 10, 30), (EquipmentQuality.Uncommon, "灵品", 30, 100), (EquipmentQuality.Rare, "宝品", 80, 300) })
+			{
+				var qbtn = new Button { Text = $"{qual.Item2}\n矿{qual.Item3} 灵石{qual.Item4}", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(80, 44) };
+				qbtn.AddThemeFontSizeOverride("font_size", 10); qbtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); qbtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+				qbtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); qbtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+				var q = qual.Item1; int oc = qual.Item3; int sc = qual.Item4;
+				qbtn.Pressed += () => { if (GM.Resources.Spend(ResourceType.Ore, oc) && GM.Resources.Spend(ResourceType.SpiritStone, sc)) { var ne = EquipmentTable.CraftRandom(GM.SectLevel); if (ne.Quality < q) { ne.Quality = q; ne.UpgradeQuality(); } GM.AllEquipment.Add(ne); AudioManager.PlayBuild(); RefreshFacilities(); } };
+				eqInner.AddChild(qbtn); eqInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			}
+			ecv.AddChild(eqRow);
+			craftGrid.AddChild(eqCard);
+
+			// Pill crafting card
+			var pillCard = MakeCard(300); var pcv = (VBoxContainer)pillCard.GetChild(0);
+			pcv.AddChild(HL("🧪 炼制丹药", 16, UITheme.TextGreen)); pcv.AddChild(SP(6));
+			pcv.AddChild(new Label { Text = "消耗灵草与灵石，炼制丹药\n可用于赠礼、突破消耗、弟子修炼", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim));
+			pcv.AddChild(SP(8));
+			var pillRow = new HBoxContainer(); var pillc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; pillRow.AddChild(pillc);
+			var pillInner = new HBoxContainer(); pillc.AddChild(pillInner);
+			foreach (var pt in new[] { ("小还丹×3", 5, 20), ("培元丹×5", 12, 50), ("凝神丹×8", 30, 120) })
+			{
+				var pbtn = new Button { Text = $"{pt.Item1}\n草{pt.Item2} 灵石{pt.Item3}", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(85, 44) };
+				pbtn.AddThemeFontSizeOverride("font_size", 10); pbtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); pbtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+				pbtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); pbtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+				int hc = pt.Item2; int psc = pt.Item3; string pname = pt.Item1; int pcount = int.Parse(pname.Split('×')[1]);
+				pbtn.Pressed += () => { if (GM.Resources.Spend(ResourceType.Herb, hc) && GM.Resources.Spend(ResourceType.SpiritStone, psc)) { GM.Resources.Add(ResourceType.Pill, pcount); AudioManager.PlayBuild(); RefreshFacilities(); } };
+				pillInner.AddChild(pbtn); pillInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+			}
+			pcv.AddChild(pillRow);
+			craftGrid.AddChild(pillCard);
+		}
+
+		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(8));
+		c.AddChild(HL($"已建灵筑（{GM.Facilities.AllFacilities.Count(f => f.IsBuilt)}座）", 16, UITheme.Gold)); c.AddChild(SP(8));
 		if (GM.Facilities.Count == 0) { c.AddChild(TB("尚未营造灵筑。切换到「营造」页开始建设。", UITheme.TextDim, 13)); return; }
 
 		foreach (var f in GM.Facilities.AllFacilities.OrderByDescending(f => f.Level))
