@@ -657,27 +657,31 @@ public partial class MainUI : Control
 		var applyBtn = SmallBtn("执行"); applyBtn.Pressed += ApplyBatchAssign; bc1.AddChild(applyBtn);
 		c.AddChild(batchBar); c.AddChild(SP(4));
 
-		// Auto-assign row (separate line)
-		var autoRow = new HBoxContainer();
-		var ac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; autoRow.AddChild(ac);
+		// Smart arrange
 		if (GM.CanAutoAssign)
 		{
+			var smartRow = new HBoxContainer(); var sc2 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; smartRow.AddChild(sc2);
+			var smartInner = new HBoxContainer(); sc2.AddChild(smartInner);
+			var smartBtn = new Button { Text = "智能安排", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(140, 34) };
+			smartBtn.AddThemeFontSizeOverride("font_size", 14); smartBtn.AddThemeColorOverride("font_color", UITheme.Gold); smartBtn.AddThemeColorOverride("font_hover_color", new Color(1,1,1));
+			smartBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); smartBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			smartBtn.Pressed += () => { AudioManager.PlayClick(); ApplySmart("proficiency"); RefreshDisciples(); };
+			smartInner.AddChild(smartBtn);
+			smartInner.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
 			var autoToggle = new CheckBox { ButtonPressed = GM.AutoAssignEnabled };
-			autoToggle.AddThemeFontSizeOverride("font_size", 11);
 			autoToggle.Toggled += (on) => { GM.AutoAssignEnabled = on; };
-			ac.AddChild(autoToggle);
-			ac.AddChild(new Control { CustomMinimumSize = new Vector2I(3, 0) });
-			ac.AddChild(new Label { Text = "自动安排", VerticalAlignment = VerticalAlignment.Center }.WithFont(11, UITheme.TextGreen));
-			ac.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
-			var stratBtn = SmallBtn("策略"); stratBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			smartInner.AddChild(autoToggle);
+			smartInner.AddChild(new Label { Text = "每日自动", VerticalAlignment = VerticalAlignment.Center }.WithFont(11, UITheme.TextDim));
+			smartInner.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+			var stratBtn = SmallBtn("策略"); stratBtn.AddThemeColorOverride("font_color", UITheme.TextBlue);
 			stratBtn.Pressed += () => { _smartPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_smartPopup.GetChild(0)); };
-			ac.AddChild(stratBtn);
+			smartInner.AddChild(stratBtn);
+			c.AddChild(smartRow);
 		}
 		else
 		{
-			ac.AddChild(new Label { Text = "🔒 修建藏经阁并达到Lv.2可解锁自动安排" }.WithFont(10, UITheme.TextDim));
+			c.AddChild(new Label { Text = "🔒 修建藏经阁并达到宗门Lv.2解锁「智能安排」", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim));
 		}
-		c.AddChild(autoRow);
 		c.AddChild(SP(8));
 
 		int cols = Math.Min(3, Math.Max(1, GM.Disciples.Count));
