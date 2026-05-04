@@ -652,14 +652,15 @@ public partial class MainUI : Control
 		// Batch controls
 		_batchChecks.Clear();
 		var batchBar = new HBoxContainer(); var bc1 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; batchBar.AddChild(bc1);
-		var selAll = SmallBtn("全选"); selAll.Pressed += () => { foreach (var kv in _batchChecks) kv.Value.ButtonPressed = true; }; bc1.AddChild(selAll);
-		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
-		var deselAll = SmallBtn("全不选"); deselAll.Pressed += () => { foreach (var kv in _batchChecks) kv.Value.ButtonPressed = false; }; bc1.AddChild(deselAll);
-		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
-		bc1.AddChild(new Label { Text = "批量设为:", VerticalAlignment = VerticalAlignment.Center }.WithFont(11, UITheme.TextDim));
-		_batchDrop = new OptionButton(); _batchDrop.AddThemeFontSizeOverride("font_size", 11); foreach (var tn in TaskNames) _batchDrop.AddItem(tn); bc1.AddChild(_batchDrop);
-		bc1.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
-		var applyBtn = SmallBtn("执行"); applyBtn.Pressed += ApplyBatchAssign; bc1.AddChild(applyBtn);
+		var batchInner = new HBoxContainer(); bc1.AddChild(batchInner);
+		var selAll = SmallBtn("全选"); selAll.Pressed += () => { foreach (var kv in _batchChecks) kv.Value.ButtonPressed = true; }; batchInner.AddChild(selAll);
+		batchInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+		var deselAll = SmallBtn("全不选"); deselAll.Pressed += () => { foreach (var kv in _batchChecks) kv.Value.ButtonPressed = false; }; batchInner.AddChild(deselAll);
+		batchInner.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+		batchInner.AddChild(new Label { Text = "批量设为:", VerticalAlignment = VerticalAlignment.Center }.WithFont(11, UITheme.TextDim));
+		_batchDrop = new OptionButton(); _batchDrop.AddThemeFontSizeOverride("font_size", 11); foreach (var tn in TaskNames) _batchDrop.AddItem(tn); batchInner.AddChild(_batchDrop);
+		batchInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
+		var applyBtn = SmallBtn("执行"); applyBtn.Pressed += ApplyBatchAssign; batchInner.AddChild(applyBtn);
 		c.AddChild(batchBar); c.AddChild(SP(4));
 
 		// Smart arrange
