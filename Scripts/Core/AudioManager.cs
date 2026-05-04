@@ -152,6 +152,16 @@ public static class AudioManager
 
     public static bool IsBGMRunning => _bgmPlayer != null && _bgmPlayer.Playing;
 
+    /// <summary>Stop and clean up all audio before quitting.</summary>
+    public static void Shutdown()
+    {
+        _bgmPlayer?.Stop();
+        _bgmPlayer?.QueueFree();
+        _bgmPlayer = null;
+        _inited = false;
+        _root = null;
+    }
+
     static void PlaySfx(string name)
     {
         if (_root == null || !_sounds.TryGetValue(name, out var stream)) return;

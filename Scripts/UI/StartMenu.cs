@@ -17,6 +17,12 @@ public partial class StartMenu : Control
         UITheme.ApplyTo(this);
     }
 
+    public override void _Notification(int what)
+    {
+        if (what == NotificationWMCloseRequest)
+            AudioManager.Shutdown();
+    }
+
     private void BuildUI()
     {
         // Fullscreen background
@@ -118,7 +124,7 @@ public partial class StartMenu : Control
         newBtn.Pressed += () => { AudioManager.PlayClick(); OnNewGame(); };
         loadBtn.Pressed += () => { AudioManager.PlayClick(); OnLoadGame(); };
         settingsBtn.Pressed += () => { AudioManager.PlayClick(); _settingsPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_settingsPopup.GetChild(0)); };
-        quitBtn.Pressed += () => { AudioManager.PlayClick(); GetTree().Quit(); };
+        quitBtn.Pressed += () => { AudioManager.PlayClick(); AudioManager.Shutdown(); GetTree().Quit(); };
 
         foreach (var btn in new[] { newBtn, loadBtn, settingsBtn, quitBtn })
         {
