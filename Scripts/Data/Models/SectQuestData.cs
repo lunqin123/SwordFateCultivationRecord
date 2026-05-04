@@ -2,12 +2,15 @@ namespace SwordFateCultivationRecord;
 
 public enum QuestType
 {
-    RecruitDisciples,   // 招募弟子
-    BuildFacilities,    // 建造设施
-    ReachReputation,    // 达到声望
-    GatherResource,     // 收集资源
-    DiscipleBreakthrough, // 弟子突破
-    UpgradeFacilities   // 升级设施
+    RecruitDisciples,    // 招募内门弟子
+    BuildFacilities,     // 建造设施
+    ReachReputation,     // 达到声望
+    GatherResource,      // 收集资源
+    DiscipleBreakthrough,// 弟子突破
+    UpgradeFacilities,   // 升级设施
+    AccumulateEquipment, // 积累法器
+    OuterDiscipleCount,  // 外门壮大
+    SectPowerReach,      // 战力达标
 }
 
 public class SectQuestData

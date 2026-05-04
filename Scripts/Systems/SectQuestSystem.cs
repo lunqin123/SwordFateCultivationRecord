@@ -65,6 +65,9 @@ public class SectQuestSystem
             QuestType.GatherResource => gm.Resources.Get(ResourceType.SpiritStone),
             QuestType.DiscipleBreakthrough => gm.Disciples.AllDisciples.Count(d => d.Realm > CultivationRealm.Mortal),
             QuestType.UpgradeFacilities => gm.Facilities.AllFacilities.Count(f => f.Level > 1),
+	            QuestType.AccumulateEquipment => gm.AllEquipment.Count,
+	            QuestType.OuterDiscipleCount => gm.OuterDiscipleCount,
+	            QuestType.SectPowerReach => gm.SectPower,
             _ => 0
         };
     }
@@ -133,6 +136,28 @@ public class SectQuestSystem
                 repReward = (int)(30 * target * scale);
                 rewards[ResourceType.SpiritEssence] = (int)(20 * target * scale);
                 break;
+				case QuestType.AccumulateEquipment:
+					target = (int)((3 + _rng.Next(5)) * scale);
+					title = tier switch { 1 => "法器积累", 2 => "武装弟子", 3 => "宝器满堂", _ => "仙器如云" };
+					desc = $"积累{target}件法器";
+					repReward = (int)(10 * target * scale);
+					rewards[ResourceType.Ore] = (int)(5 * target * scale);
+					break;
+				case QuestType.OuterDiscipleCount:
+					target = (int)((10 + _rng.Next(10)) * scale);
+					title = tier switch { 1 => "外门扩招", 2 => "人丁兴旺", 3 => "门徒如云", _ => "万众归心" };
+					desc = $"外门弟子达到{target}人";
+					repReward = (int)(5 * target * scale);
+					rewards[ResourceType.SpiritStone] = (int)(3 * target * scale);
+					break;
+				case QuestType.SectPowerReach:
+					target = (int)((30 + _rng.Next(5) * 20) * scale);
+					title = tier switch { 1 => "战备训练", 2 => "战力提升", 3 => "威震四方", _ => "所向披靡" };
+					desc = $"宗门战力达到{target}";
+					repReward = (int)(target * scale);
+					rewards[ResourceType.Equipment] = (int)(2 * scale);
+					break;
+
             default:
                 target = 1; title = "未知"; desc = ""; repReward = 10; break;
         }

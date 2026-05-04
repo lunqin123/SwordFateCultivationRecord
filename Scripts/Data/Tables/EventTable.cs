@@ -405,6 +405,116 @@ public static class EventTable
             Choice2Outcome = new() { ResultText = "天道之力涌入弟子体内，多人当场突破！", DiscipleCultivationBonus = 50, DiscipleStatEffects = new[] { 10, 20, 0 }, ReputationChange = 10 },
             Choice3Outcome = new() { ResultText = "你从天道感应中领悟了一丝大道至理。", DiscipleCultivationBonus = 25, ReputationChange = 15 },
         },
+
+        // ====== 顶级事件 (Lv.4+) ======
+        new()
+        {
+            Id = 50, Category = EventCategory.Crisis, Weight = 8, MinSectLevel = 5,
+            Title = "天外邪魔",
+            Description = "一道空间裂缝在宗门上空撕开，从中涌出大量天外邪魔！这些异界生物散发着诡异的魔气，以修仙者的灵力为食。若不及时应对，整个宗门都将被吞噬！",
+            Choice1Text = "开启护宗大阵全力防御",
+            Choice2Text = "集结精锐主动出击",
+            Choice3Text = "向修仙界发出求援信号",
+            Choice1Outcome = new() { ResultText = "大阵成功挡住邪魔进攻，但消耗了海量灵石。修仙界对宗门防御能力刮目相看！", ResourceChanges = { [ResourceType.SpiritStone] = -500, [ResourceType.SpiritEssence] = -30 }, ReputationChange = 40, PowerChange = 30 },
+            Choice2Outcome = new() { ResultText = "弟子们英勇奋战击退邪魔先锋！从残骸中获得了珍贵的天外材料。", ResourceChanges = { [ResourceType.Ore] = 80, [ResourceType.Equipment] = 15 }, DiscipleStatEffects = new[] { 10, 15, -25 }, ReputationChange = 50, PowerChange = 50 },
+            Choice3Outcome = new() { ResultText = "援军赶到，邪魔被击退。虽欠下人情但宗门地位大幅提升。", ReputationChange = 30, ResourceChanges = { [ResourceType.SpiritStone] = -200 } },
+        },
+        new()
+        {
+            Id = 51, Category = EventCategory.Opportunity, Weight = 8, MinSectLevel = 4,
+            Title = "上古传承",
+            Description = "藏经阁中发现了一卷尘封的玉简，竟是上古大能遗留的完整传承功法！但修炼此功法需要极高的悟性，且存在走火入魔的风险。",
+            Choice1Text = "挑选悟性最高的弟子修炼",
+            Choice2Text = "集思广益多人参详",
+            Choice3Text = "封印保存等实力足够再解封",
+            Choice1Outcome = new() { ResultText = "弟子成功参悟上古功法修为突飞猛进！宗门从此多了一门镇宗绝学。", DiscipleCultivationBonus = 40, ReputationChange = 20, PowerChange = 30 },
+            Choice2Outcome = new() { ResultText = "多名弟子各有所悟，整体提升可观。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new[] { 5, 5, 0 } },
+            Choice3Outcome = new() { ResultText = "传承被安全保存，等待有缘之人。", ReputationChange = 5 },
+        },
+        new()
+        {
+            Id = 52, Category = EventCategory.Competition, Weight = 10, MinSectLevel = 4,
+            Title = "宗门之战",
+            Description = "两个中型宗门为争夺灵石矿脉爆发冲突，双方都来拉拢你站队。这是可能改变区域格局的争端。",
+            Choice1Text = "选择实力更强的一方",
+            Choice2Text = "居中调解化干戈为玉帛",
+            Choice3Text = "坐山观虎斗渔翁得利",
+            Choice1Outcome = new() { ResultText = "战争迅速结束，你分得了矿脉的部分权益。但另一方对你心生怨恨。", ResourceChanges = { [ResourceType.SpiritStone] = 500, [ResourceType.Ore] = 60 }, ReputationChange = 15, PowerChange = 20 },
+            Choice2Outcome = new() { ResultText = "成功调解了争端，两方都对你感激不尽。宗门声望大增！", ReputationChange = 35, DiscipleStatEffects = new[] { 5, 5, 0 } },
+            Choice3Outcome = new() { ResultText = "两败俱伤后趁势吞并了矿区。收获巨大但名声受损。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Ore] = 100 }, ReputationChange = -10, DiscipleStatEffects = new[] { -3, 0, 0 } },
+        },
+        new()
+        {
+            Id = 53, Category = EventCategory.Visitor, Weight = 6, MinSectLevel = 5,
+            Title = "大能转世",
+            Description = "一位元婴期散修大能找上门来，声称宗门中一名弟子是他道侣的转世之身。他想带这名弟子离开，许诺给予丰厚回报。",
+            Choice1Text = "尊重弟子意愿让其自己选择",
+            Choice2Text = "婉拒大能，弟子是宗门的人",
+            Choice3Text = "接受条件换取弟子离开",
+            Choice1Outcome = new() { ResultText = "弟子选择留下，大能虽失望但欣赏宗门气度，留下了一份重礼。", ResourceChanges = { [ResourceType.Pill] = 20, [ResourceType.Equipment] = 5 }, ReputationChange = 15 },
+            Choice2Outcome = new() { ResultText = "大能勃然大怒但碍于宗门实力不敢发作。弟子对宗门更加忠诚。", DiscipleStatEffects = new[] { 15, 5, 0 }, ReputationChange = 5 },
+            Choice3Outcome = new() { ResultText = "大能留下丰厚报酬和修炼心得，弟子含泪离去。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Pill] = 15 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { -5, -10, 0 } },
+        },
+        new()
+        {
+            Id = 54, Category = EventCategory.Opportunity, Weight = 6, MinSectLevel = 6,
+            Title = "飞升雷劫",
+            Description = "千里外一位化神大能正在渡飞升之劫！雷劫余波震荡天地，方圆万里灵气都在向渡劫之地汇聚。这是千载难逢的观摩机缘。",
+            Choice1Text = "带领精锐弟子前去观礼",
+            Choice2Text = "远程感应劫雷之力",
+            Choice3Text = "趁机吸收汇聚而来的灵气",
+            Choice1Outcome = new() { ResultText = "亲眼目睹飞升之劫，弟子们道心大受震撼！多人当场顿悟突破。", DiscipleCultivationBonus = 60, ReputationChange = 25, DiscipleStatEffects = new[] { 5, 15, 0 } },
+            Choice2Outcome = new() { ResultText = "虽未亲临但从劫雷中领悟了一丝天机，弟子各有感悟。", DiscipleCultivationBonus = 30 },
+            Choice3Outcome = new() { ResultText = "宗门灵气浓度暴增，弟子修炼速度大幅提升。", ResourceChanges = { [ResourceType.SpiritEssence] = 80 }, DiscipleCultivationBonus = 20 },
+        },
+        new()
+        {
+            Id = 55, Category = EventCategory.Internal, Weight = 8, MinSectLevel = 5,
+            Title = "万宗来朝",
+            Description = "宗门声望已传遍整个大陆。四方宗门纷纷派遣使者前来朝贺，甚至有远方的宗门不远万里而来。这是一次展示宗门实力的绝佳机会。",
+            Choice1Text = "举办盛大的万宗大典",
+            Choice2Text = "低调接待专注实质交流",
+            Choice3Text = "借机展示武力震慑四方",
+            Choice1Outcome = new() { ResultText = "大典盛况空前！宗门声望达到新的高峰。各方来客赞不绝口。", ResourceChanges = { [ResourceType.SpiritStone] = -300 }, ReputationChange = 60, DiscipleStatEffects = new[] { 5, 15, 0 } },
+            Choice2Outcome = new() { ResultText = "实质性的交流带来了宝贵的外交成果和技术交换。", ResourceChanges = { [ResourceType.Pill] = 15, [ResourceType.Equipment] = 8 }, ReputationChange = 25, DiscipleCultivationBonus = 10 },
+            Choice3Outcome = new() { ResultText = "武力展示起到震慑效果但也引起了一些宗门的不安。", ReputationChange = 35, PowerChange = 30, DiscipleStatEffects = new[] { 5, -5, 0 } },
+        },
+        new()
+        {
+            Id = 56, Category = EventCategory.Opportunity, Weight = 5, MinSectLevel = 6,
+            Title = "天道碎片",
+            Description = "天空中坠落了一块散发着七彩光芒的碎片——竟是传说中的「天道碎片」！蕴含着一丝天道法则，若能参悟将获得不可思议的力量。但它的出现也惊动了整个修仙界。",
+            Choice1Text = "不计代价夺取天道碎片",
+            Choice2Text = "联合友好宗门共同研究",
+            Choice3Text = "设下禁制秘密参悟",
+            Choice1Outcome = new() { ResultText = "成功夺取天道碎片！虽然损失了不少灵石和法器但获得了无上机缘。", ResourceChanges = { [ResourceType.SpiritStone] = -600, [ResourceType.Equipment] = -8 }, DiscipleCultivationBonus = 80, ReputationChange = 50, PowerChange = 60 },
+            Choice2Outcome = new() { ResultText = "联合研究后各方都有收获，宗门间的联盟更加牢固。", DiscipleCultivationBonus = 40, ReputationChange = 30, ResourceChanges = { [ResourceType.SpiritStone] = -200 } },
+            Choice3Outcome = new() { ResultText = "秘密参悟被发现，虽有所获但也引起了其他势力的觊觎。", DiscipleCultivationBonus = 50, ReputationChange = -10 },
+        },
+        new()
+        {
+            Id = 57, Category = EventCategory.Opportunity, Weight = 8, MinSectLevel = 5,
+            Title = "龙脉觉醒",
+            Description = "宗门地下深处传来震耳欲聋的龙吟！一条沉睡万年的龙脉在宗门下方觉醒了！龙脉复苏灵气如潮水般涌出，整个宗门的修炼环境将发生翻天覆地的变化。",
+            Choice1Text = "布阵引导龙脉之力遍布宗门",
+            Choice2Text = "在龙脉核心处建造修炼圣地",
+            Choice3Text = "驯服龙脉化为护宗灵兽",
+            Choice1Outcome = new() { ResultText = "龙脉之力均匀散布，宗门每一处都变成了修炼宝地！", ResourceChanges = { [ResourceType.SpiritEssence] = 120 }, DiscipleCultivationBonus = 30, ReputationChange = 20 },
+            Choice2Outcome = new() { ResultText = "修炼圣地建成，在此修炼的效率是外界的数倍！弟子们排队等待使用。", DiscipleCultivationBonus = 45, ResourceChanges = { [ResourceType.SpiritEssence] = 60 } },
+            Choice3Outcome = new() { ResultText = "龙脉化为一条金色巨龙守护山门，宗门防御力大增！", PowerChange = 50, ReputationChange = 35, ResourceChanges = { [ResourceType.SpiritEssence] = 40 } },
+        },
+        new()
+        {
+            Id = 58, Category = EventCategory.Crisis, Weight = 6, MinSectLevel = 6,
+            Title = "仙器出世",
+            Description = "宗门千里外一座古战场中一道仙光直冲云霄——一件传说中的仙器即将出世！消息已传遍修仙界，各方势力都在赶往古战场。仙器之争一触即发。",
+            Choice1Text = "倾巢而出争夺仙器",
+            Choice2Text = "派出小队伺机而动",
+            Choice3Text = "放弃争夺专注宗门发展",
+            Choice1Outcome = new() { ResultText = "仙器被成功夺回！虽付出伤亡代价但这件仙器将成为宗门镇宗之宝！", ResourceChanges = { [ResourceType.Equipment] = 25 }, ReputationChange = 60, PowerChange = 80, DiscipleStatEffects = new[] { 10, 15, -30 } },
+            Choice2Outcome = new() { ResultText = "虽没得到仙器本身但趁机收集了大量古战场的遗宝。", ResourceChanges = { [ResourceType.SpiritStone] = 300, [ResourceType.Equipment] = 10, [ResourceType.Pill] = 15 } },
+            Choice3Outcome = new() { ResultText = "避免了无谓伤亡，宗门稳定发展。但仙器落入他手未来可能成为威胁。", DiscipleStatEffects = new[] { 0, -10, 0 }, ReputationChange = -5 },
+        },
     };
 
     public static IReadOnlyList<EventData> GetAllEvents() => _events;
