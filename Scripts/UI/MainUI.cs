@@ -572,42 +572,6 @@ public partial class MainUI : Control
 		StatCard(statGrid, "法器库存", $"{GM.AllEquipment.Count(e => e.EquippedById < 0)}件", UITheme.TextBlue);
 		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
 
-		// 外门管理
-		c.AddChild(HL($"外门弟子: {GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}人", 16, UITheme.Gold)); c.AddChild(SP(6));
-		int gCnt = GM.OuterGatherCount, tCnt = GM.OuterTradeCount, iCnt = GM.OuterIdleCount;
-		double eff2 = GM.OuterEfficiency;
-		string effTag = eff2 >= 1.0 ? "" : $" (超限效率{eff2*100:F0}%)";
-		c.AddChild(new Label { Text = $"采集{gCnt}人: 灵草+{gCnt*0.22*eff2:F1}/d  矿石+{gCnt*0.16*eff2:F1}/d  经商{tCnt}人: 灵石+{tCnt*0.25*eff2:F1}/d  待命{iCnt}人: 无消耗{effTag}", HorizontalAlignment = HorizontalAlignment.Center, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(12, UITheme.TextDim));
-		c.AddChild(SP(6));
-
-		// Role adjustment sliders
-		var roleRow = new HBoxContainer(); var rc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; roleRow.AddChild(rc);
-		rc.AddChild(new Label { Text = "采集" }.WithFont(11, UITheme.TextGreen));
-		var gatherSlider = new HSlider { CustomMinimumSize = new Vector2I(100, 16), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
-		gatherSlider.ValueChanged += (v) => { GM.SetOuterRoles((int)v, GM.OuterTradeRatio); RefreshOverview(); };
-		rc.AddChild(gatherSlider); rc.AddChild(new Label { Text = GM.OuterGatherRatio + "%" }.WithFont(11, UITheme.TextDim));
-		rc.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
-		rc.AddChild(new Label { Text = "经商" }.WithFont(11, UITheme.Gold));
-		var tradeSlider = new HSlider { CustomMinimumSize = new Vector2I(100, 16), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
-		tradeSlider.ValueChanged += (v) => { GM.SetOuterRoles(GM.OuterGatherRatio, (int)v); RefreshOverview(); };
-		rc.AddChild(tradeSlider); rc.AddChild(new Label { Text = GM.OuterTradeRatio + "%" }.WithFont(11, UITheme.TextDim));
-		c.AddChild(roleRow); c.AddChild(SP(6));
-
-		var outerBtnRow = new HBoxContainer();
-		outerBtnRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-		var recruitOuterBtn = new Button { Text = "招募外门 (灵石)", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 36) };
-		recruitOuterBtn.AddThemeFontSizeOverride("font_size", 13); recruitOuterBtn.AddThemeColorOverride("font_color", UITheme.TextPrimary);
-		recruitOuterBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
-		recruitOuterBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); recruitOuterBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
-		int recruitCost = 50 + GM.OuterDiscipleCount / 5;
-		recruitOuterBtn.Text = $"招募外门 ({recruitCost}灵石)";
-		recruitOuterBtn.Pressed += () => { AudioManager.PlayClick(); GM.RecruitOuterDisciples(); RefreshOverview(); };
-		outerBtnRow.AddChild(recruitOuterBtn);
-		outerBtnRow.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
-		c.AddChild(outerBtnRow);
-
-		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
-
 		c.AddChild(HL("资源储备", 16, UITheme.Gold)); c.AddChild(SP(6));
 		var resGrid = new GridContainer { Columns = 4 }; c.AddChild(CenteredGrid(resGrid));
 		foreach (ResourceType rt in Enum.GetValues<ResourceType>()) { int val = GM.Resources.Get(rt); int inc = GM.Resources.GetIncome(rt); string text = inc > 0 ? $"{ResName(rt)}: {val} (+{inc}/d)" : $"{ResName(rt)}: {val}"; var lb = new Label { Text = text, HorizontalAlignment = HorizontalAlignment.Center }; lb.AddThemeFontSizeOverride("font_size", 13); lb.AddThemeColorOverride("font_color", UITheme.TextPrimary); resGrid.AddChild(lb); }
@@ -628,8 +592,42 @@ public partial class MainUI : Control
 	void RefreshDisciples()
 	{
 		var c = _tabContents[1]; c.FreeChildren();
-		c.AddChild(HL($"弟子名录（{GM.Disciples.Count}/{GM.MaxDisciples}人）", 18, UITheme.Gold)); c.AddChild(SP(10));
-		if (GM.Disciples.Count == 0) { c.AddChild(TB("尚无弟子。点击底部「入门大比」举办选拔大会（七日后举行）。", UITheme.TextDim, 13)); return; }
+		c.AddChild(HL($"内门弟子（{GM.Disciples.Count}/{GM.MaxDisciples}人）", 18, UITheme.Gold)); c.AddChild(SP(4));
+
+		// 外门管理区
+		{
+			int gCnt2 = GM.OuterGatherCount, tCnt2 = GM.OuterTradeCount, iCnt2 = GM.OuterIdleCount;
+			double eff3 = GM.OuterEfficiency;
+			string effTag2 = eff3 >= 1.0 ? "" : $" (超限{eff3*100:F0}%)";
+			c.AddChild(new Label { Text = $"外门 {GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}人: 采集{gCnt2} {tCnt2}经商 {iCnt2}待命{effTag2}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+
+			// Sliders row - proper HBoxContainer, NO CenterContainer stacking
+			var sliderRow = new HBoxContainer(); var sliderCenter = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; sliderRow.AddChild(sliderCenter);
+			var sliderInner = new HBoxContainer(); sliderCenter.AddChild(sliderInner);
+			sliderInner.AddChild(new Label { Text = "采集" }.WithFont(11, UITheme.TextGreen));
+			var gs = new HSlider { CustomMinimumSize = new Vector2I(80, 14), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
+			gs.ValueChanged += (v) => { GM.SetOuterRoles((int)v, GM.OuterTradeRatio); RefreshDisciples(); };
+			sliderInner.AddChild(gs); sliderInner.AddChild(new Label { Text = GM.OuterGatherRatio + "%" }.WithFont(11, UITheme.TextDim));
+			sliderInner.AddChild(new Control { CustomMinimumSize = new Vector2I(14, 0) });
+			sliderInner.AddChild(new Label { Text = "经商" }.WithFont(11, UITheme.Gold));
+			var ts = new HSlider { CustomMinimumSize = new Vector2I(80, 14), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
+			ts.ValueChanged += (v) => { GM.SetOuterRoles(GM.OuterGatherRatio, (int)v); RefreshDisciples(); };
+			sliderInner.AddChild(ts); sliderInner.AddChild(new Label { Text = GM.OuterTradeRatio + "%" }.WithFont(11, UITheme.TextDim));
+			c.AddChild(sliderRow);
+
+			// Recruit button
+			var obr = new HBoxContainer(); obr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+			int rcost = 50 + GM.OuterDiscipleCount / 5;
+			var rob = new Button { Text = $"招募外门 ({rcost}灵石)", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(170, 34) };
+			rob.AddThemeFontSizeOverride("font_size", 12); rob.AddThemeColorOverride("font_color", UITheme.TextPrimary); rob.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+			rob.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); rob.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			rob.Pressed += () => { AudioManager.PlayClick(); GM.RecruitOuterDisciples(); RefreshDisciples(); };
+			obr.AddChild(rob); obr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+			c.AddChild(obr);
+		}
+		c.AddChild(SP(8)); c.AddChild(HR()); c.AddChild(SP(8));
+
+		if (GM.Disciples.Count == 0) { c.AddChild(TB("尚无内门弟子。点击底部「内门选拔」举办选拔大会（七日后举行）。", UITheme.TextDim, 13)); return; }
 
 		// Batch controls
 		_batchChecks.Clear();
