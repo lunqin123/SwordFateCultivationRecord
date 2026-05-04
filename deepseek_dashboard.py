@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-DeepSeek · 任务栏悬浮用量条
-消费为主体 · 嵌入任务栏上方 · 单击展开详情
+DeepSeek · 任务栏用量看板
+Win11 原生亚克力模糊 · 实时余额/Token/缓存命中率
 """
 
 import ctypes, json, math, os, re, sys, threading
-from collections import defaultdict
 from ctypes import wintypes
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta, date
 
@@ -40,21 +40,67 @@ F = "Microsoft YaHei UI"
 def ff(s=12, w="normal"): return ctk.CTkFont(family=F, size=s, weight=w)
 
 A = {
-    "bg": "#0c0e1a", "card": "#151830", "border": "#252a50",
+    "bg": "#080c18", "card": "#0e1225", "border": "#1c2240",
     "cyan": "#00e5ff", "green": "#00e676", "pink": "#ff4081",
     "purple": "#b388ff", "orange": "#ff9100",
-    "text": "#e8e8e8", "text2": "#6a7a8a",
+    "text": "#e8e8e8", "text2": "#607080",
 }
 
 
 # ═══════════════════════════════════════════════════════════
+#  亚克力模糊 — SetWindowCompositionAttribute
+# ═══════════════════════════════════════════════════════════
+class ACCENTPOLICY(ctypes.Structure):
+    _fields_ = [
+        ("AccentState", ctypes.c_int),
+        ("AccentFlags", ctypes.c_int),
+        ("GradientColor", ctypes.c_int),
+        ("AnimationId", ctypes.c_int),
+    ]
+
+class WINCOMPATTRDATA(ctypes.Structure):
+    _fields_ = [
+        ("Attribute", ctypes.c_int),
+        ("Data", ctypes.POINTER(ACCENTPOLICY)),
+        ("SizeOfData", ctypes.c_int),
+    ]
+
+SetWindowCompositionAttribute = ctypes.windll.user32.SetWindowCompositionAttribute
+SetWindowCompositionAttribute.argtypes = [wintypes.HWND, ctypes.POINTER(WINCOMPATTRDATA)]
+SetWindowCompositionAttribute.restype = wintypes.BOOL
+
+def apply_acrylic(hwnd):
+    """启用 Win10/11 Acrylic Blur 效果 (AccentState=4)"""
+    accent = ACCENTPOLICY()
+    accent.AccentState = 4  # ACCENT_ENABLE_ACRYLICBLURBEHIND
+    accent.AccentFlags = 2  # 绘制所有边框
+    # 暗色叠加 RGBA -> ABGR: 暗色背景 #101420 -> 0x201410 at 0xCC alpha
+    accent.GradientColor = 0xCC201410
+
+    data = WINCOMPATTRDATA()
+    data.Attribute = 19  # WCA_ACCENT_POLICY
+    data.SizeOfData = ctypes.sizeof(accent)
+    data.Data = ctypes.pointer(accent)
+
+    return SetWindowCompositionAttribute(hwnd, ctypes.byref(data))
+
+
+def get_hwnd(widget):
+    """从 tkinter widget 获取原生 HWND"""
+    # tkinter 中获取 HWND: 先调 update，再调 winfo_id
+    widget.update_idletasks()
+    return widget.winfo_id()
+
+
+# ═══════════════════════════════════════════════════════════
+#  任务栏
+# ═══════════════════════════════════════════════════════════
 def get_taskbar_rect():
-    """获取 Windows 任务栏矩形"""
     hwnd = ctypes.windll.user32.FindWindowW("Shell_TrayWnd", None)
     if not hwnd: return None
-    rect = wintypes.RECT()
-    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(rect))
-    return rect.left, rect.top, rect.right, rect.bottom
+    r = wintypes.RECT()
+    ctypes.windll.user32.GetWindowRect(hwnd, ctypes.byref(r))
+    return r.left, r.top, r.right, r.bottom
 
 
 # ═══════════════════════════════════════════════════════════
@@ -80,8 +126,7 @@ class Config:
                 with open(CFG, "r", encoding="utf-8") as f: return json.load(f)
             except: pass
         return {"api_key": "", "pricing": {}, "interval": 30,
-                "consumption": {}, "last_balance": None, "usage_cache": [],
-                "win_geo": ""}
+                "consumption": {}, "last_balance": None, "usage_cache": []}
     def save(self):
         with open(CFG, "w", encoding="utf-8") as f:
             json.dump(self.d, f, indent=2, ensure_ascii=False)
@@ -117,18 +162,14 @@ class Config:
         self.d["usage_cache"] = [{"date": d.date.isoformat(), "p": d.prompt_tokens,
                 "c": d.completion_tokens, "cost": d.cost, "n": d.requests} for d in data]
         self.save()
-    def save_geo(self, geo): self.d["win_geo"] = geo; self.save()
-    def load_geo(self): return self.d.get("win_geo", "")
 
 
 class API:
     def __init__(self, key=""):
         self.s = requests.Session()
-        if key: self.s.headers.update({"Authorization": f"Bearer {key}",
-                                        "Accept": "application/json"})
+        if key: self.s.headers.update({"Authorization": f"Bearer {key}", "Accept": "application/json"})
     def set_key(self, k):
-        self.s.headers.update({"Authorization": f"Bearer {k}",
-                               "Accept": "application/json"})
+        self.s.headers.update({"Authorization": f"Bearer {k}", "Accept": "application/json"})
     def balance(self):
         try:
             r = self.s.get(BALANCE_API, timeout=15)
@@ -147,8 +188,7 @@ class API:
     def usage(self, start, end):
         try:
             r = self.s.get(USAGE_API, timeout=30,
-                          params={"start_date": start.isoformat(),
-                                  "end_date": end.isoformat()})
+                          params={"start_date": start.isoformat(), "end_date": end.isoformat()})
             if r.status_code == 200:
                 return True, r.json().get("data", []) if isinstance(r.json(), dict) else []
             return False, []
@@ -165,58 +205,56 @@ class App(ctk.CTk):
         self._cache_rate = 0.0; self._pa = 0.0
         self._usage = self.cfg.load_usage()
         self._in_tray = False
-        self._expanded = False  # 展开/折叠 详情
+        self._expanded = False
+        self._drx = self._dry = 0
+        self._last_bal_text = ""
 
-        # ─── 窗口：任务栏上方窄条 ──────────────────────
+        # ─── 超薄置顶窗 ──────────────────────────────────
         self.overrideredirect(True)
         self.attributes("-topmost", True)
-        self.attributes("-alpha", 0.90)
-        self.configure(fg_color=A["bg"])
-        self._compact_w, self._compact_h = 260, 40
-        self._expand_h = 240
+        self.configure(fg_color="#060810")
 
+        self._cw, self._ch = 280, 34
+        self._eh = 220
         tb = get_taskbar_rect()
         if tb:
-            # 贴在任务栏正上方
-            self._base_x = tb[2] - self._compact_w - 60  # 距右边
-            self._base_y = tb[1] - self._compact_h - 2   # 紧贴任务栏上方
+            self.geometry(f"{self._cw}x{self._ch}+{tb[2]-self._cw-60}+{tb[1]-self._ch}")
         else:
-            self._base_x = self.winfo_screenwidth() - self._compact_w - 60
-            self._base_y = self.winfo_screenheight() - self._compact_h - 52
+            self.geometry(f"{self._cw}x{self._ch}+{self.winfo_screenwidth()-self._cw-60}+{self.winfo_screenheight()-self._ch-48}")
 
-        geo = self.cfg.load_geo()
-        if geo and "+" in geo:
-            self.geometry(geo)
-        else:
-            self.geometry(f"{self._compact_w}x{self._compact_h}+{self._base_x}+{self._base_y}")
-
-        # ─── 事件 ─────────────────────────────────────
-        self.bind("<Button-1>", self._on_click)
-        self.bind("<Button-3>", self._rclick)
-        self.bind("<Enter>", self._on_enter)
-        self.bind("<Leave>", self._on_leave)
+        self.bind("<Button-1>", self._on_press)
+        self.bind("<B1-Motion>", self._dm)
+        self.bind("<ButtonRelease-1>", self._on_release)
+        self.bind("<Button-3>", self._rc)
+        self._was_drag = False
 
         # 托盘
         self._tray = None
         self._build_tray()
-
-        self._build_compact()
+        self._build()
         self._anim()
+
         self.protocol("WM_DELETE_WINDOW", self._to_tray)
 
         if self.cfg.key:
-            self.after(600, self._refresh)
+            self.after(800, self._refresh)
             self._start()
 
-    # ═══════════════════════════════════════════════════════
-    #  系统托盘
-    # ═══════════════════════════════════════════════════════
+        # 应用亚克力 (必须等窗口创建后)
+        self.after(200, lambda: apply_acrylic(get_hwnd(self)))
+
+    # ─── 亚克力 ──────────────────────────────────────────
+    def _apply_acrylic_now(self):
+        try:
+            apply_acrylic(get_hwnd(self))
+        except: pass
+
+    # ─── 托盘 ────────────────────────────────────────────
     def _build_tray(self):
         img = Image.new("RGBA", (64, 64), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
         draw.rounded_rectangle([4, 4, 60, 60], radius=12, fill=(0, 229, 255, 220))
         draw.text((14, 12), "DS", fill=(0, 0, 0, 255))
-
         menu = pystray.Menu(
             pystray.MenuItem("显示/隐藏", self._tray_toggle, default=True),
             pystray.MenuItem("退出", self._tray_quit),
@@ -224,222 +262,181 @@ class App(ctk.CTk):
         self._tray = pystray.Icon("deepseek", img, "DeepSeek", menu)
         threading.Thread(target=self._tray.run, daemon=True).start()
 
-    def _to_tray(self):
-        self.withdraw(); self._in_tray = True
-    def _tray_toggle(self, *a):
-        self.after(0, self._toggle_window)
-    def _toggle_window(self):
+    def _to_tray(self): self.withdraw(); self._in_tray = True
+    def _tray_toggle(self, *a): self.after(0, self._toggle)
+    def _toggle(self):
         if self._in_tray:
             self.deiconify(); self.attributes("-topmost", True)
             self._in_tray = False
-        else:
-            self.withdraw(); self._in_tray = True
+            self.after(200, self._apply_acrylic_now)
+        else: self.withdraw(); self._in_tray = True
     def _tray_quit(self, *a):
         self._stop()
         if hasattr(self, '_aid'): self.after_cancel(self._aid)
         if self._tray: self._tray.stop()
-        self.cfg.save_geo(self.geometry())
         self.destroy()
 
-    # ═══════════════════════════════════════════════════════
-    #  动画
-    # ═══════════════════════════════════════════════════════
+    # ─── 点击/拖拽 ──────────────────────────────────────
+    def _on_press(self, e):
+        self._drx = e.x; self._dry = e.y; self._was_drag = False
+    def _dm(self, e):
+        if abs(e.x - self._drx) > 3 or abs(e.y - self._dry) > 3:
+            self._was_drag = True
+        if self._was_drag:
+            self.geometry(f"+{e.x_root-self._drx}+{e.y_root-self._dry}")
+    def _on_release(self, e):
+        if not self._was_drag:
+            self._on_click(e)
+    def _rc(self, e):
+        m = ctk.CTkToplevel(self); m.overrideredirect(True)
+        m.configure(fg_color=A["card"])
+        m.geometry(f"105x55+{e.x_root}+{e.y_root}")
+        ctk.CTkButton(m, text="⚙ 设置", font=ff(9), fg_color="transparent",
+                     command=lambda: [m.destroy(), self._settings()]
+                     ).pack(fill="x", padx=2, pady=1)
+        ctk.CTkButton(m, text="隐藏到托盘", font=ff(9), fg_color="transparent",
+                     command=lambda: [m.destroy(), self._to_tray()]
+                     ).pack(fill="x", padx=2, pady=1)
+        m.focus_set(); m.bind("<FocusOut>", lambda _: m.destroy())
+
+    # ─── UI ───────────────────────────────────────────────
+    def _build(self):
+        self._compact_f = ctk.CTkFrame(self, fg_color="transparent")
+        self._compact_f.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        # 消费 — 主体大字
+        self.cost_v = ctk.CTkLabel(self._compact_f, text="¥ —", font=ff(18, "bold"),
+                                    text_color=A["pink"])
+        self.cost_v.pack(side="left", padx=(8, 3))
+
+        ctk.CTkFrame(self._compact_f, width=1, fg_color=A["border"]
+                    ).pack(side="left", fill="y", padx=3, pady=4)
+
+        # 右侧信息
+        ri = ctk.CTkFrame(self._compact_f, fg_color="transparent")
+        ri.pack(side="left", fill="y")
+        self.bal_m = ctk.CTkLabel(ri, text="余额 —", font=ff(9), text_color=A["text2"])
+        self.bal_m.pack(anchor="w")
+        self.tok_m = ctk.CTkLabel(ri, text="Token —", font=ff(9), text_color=A["text2"])
+        self.tok_m.pack(anchor="w")
+
+        # 右侧：缓存+按钮
+        rt = ctk.CTkFrame(self._compact_f, fg_color="transparent")
+        rt.pack(side="right", padx=(0, 4))
+        self.cache_m = ctk.CTkLabel(rt, text="—", font=ff(10, "bold"), text_color=A["purple"])
+        self.cache_m.pack(side="left", padx=(0, 4))
+        ctk.CTkButton(rt, text="⚙", width=16, height=16, font=ff(8),
+                     fg_color="transparent", hover_color=A["border"],
+                     text_color=A["text2"],
+                     command=self._settings).pack(side="left")
+
+        self.sts = ctk.CTkLabel(self, text="", font=ff(7), text_color=A["text2"])
+        self.sts.pack(side="bottom", pady=(0, 1))
+
+    def _show_expand(self):
+        self._expanded = True
+        self._compact_f.place_forget()
+        self._expand_f = ctk.CTkFrame(self, fg_color="transparent")
+        self._expand_f.place(relx=0, rely=0, relwidth=1, relheight=1)
+
+        # 标题
+        top = ctk.CTkFrame(self._expand_f, fg_color="transparent", height=20)
+        top.pack(fill="x", padx=8, pady=(3, 0))
+        self.tl = ctk.CTkLabel(top, text="DeepSeek", font=ff(11, "bold"), text_color=A["cyan"])
+        self.tl.pack(side="left")
+        ctk.CTkButton(top, text="—", width=16, height=16, font=ff(8),
+                     fg_color="transparent", hover_color=A["border"],
+                     text_color=A["text2"],
+                     command=self._show_compact).pack(side="right")
+
+        # 消费 大号
+        cf = ctk.CTkFrame(self._expand_f, fg_color="transparent")
+        cf.pack(fill="x", padx=10, pady=(6, 0))
+        self.ex_cost = ctk.CTkLabel(cf, text=self._c_cost, font=ff(24, "bold"),
+                                     text_color=A["pink"])
+        self.ex_cost.pack(side="left")
+        ctk.CTkLabel(cf, text="今日消费", font=ff(9), text_color=A["text2"]
+                    ).pack(side="left", padx=4)
+
+        # 余额
+        self.ex_bal = ctk.CTkLabel(self._expand_f, text=self._last_bal_text,
+                                    font=ff(9), text_color=A["text2"])
+        self.ex_bal.pack(padx=10, anchor="w")
+
+        ctk.CTkFrame(self._expand_f, height=1, fg_color=A["border"]
+                    ).pack(fill="x", padx=14, pady=4)
+
+        # Token
+        self.ex_tok = ctk.CTkLabel(self._expand_f, text=self._c_tok,
+                                    font=ff(13, "bold"), text_color=A["green"])
+        self.ex_tok.pack(padx=10, anchor="w")
+        self.ex_toks = ctk.CTkLabel(self._expand_f, text=self._c_toks,
+                                     font=ff(9), text_color=A["text2"])
+        self.ex_toks.pack(padx=10, anchor="w")
+
+        ctk.CTkFrame(self._expand_f, height=1, fg_color=A["border"]
+                    ).pack(fill="x", padx=18, pady=3)
+
+        # 缓存
+        self.ex_cache = ctk.CTkLabel(self._expand_f, text=self._c_cache,
+                                      font=ff(13, "bold"), text_color=A["purple"])
+        self.ex_cache.pack(padx=10, anchor="w")
+        self.ex_caches = ctk.CTkLabel(self._expand_f, text=self._c_caches,
+                                       font=ff(9), text_color=A["text2"])
+        self.ex_caches.pack(padx=10, anchor="w")
+
+        ctk.CTkFrame(self._expand_f, height=1, fg_color=A["border"]
+                    ).pack(fill="x", padx=18, pady=3)
+
+        # 请求
+        self.ex_req = ctk.CTkLabel(self._expand_f, text=self._c_req,
+                                    font=ff(13, "bold"), text_color=A["orange"])
+        self.ex_req.pack(padx=10, anchor="w")
+
+        # 状态
+        self.ex_sts = ctk.CTkLabel(self._expand_f, text="",
+                                    font=ff(8), text_color=A["text2"])
+        self.ex_sts.pack(pady=(4, 2))
+
+        h = self._eh
+        tb = get_taskbar_rect()
+        if tb: y = tb[1] - h
+        else: y = self.winfo_screenheight() - h - 48
+        self.geometry(f"{self._cw}x{h}+{self.winfo_x()}+{y}")
+
+    def _show_compact(self):
+        self._expanded = False
+        if hasattr(self, '_expand_f'):
+            self._expand_f.destroy()
+        h = self._ch
+        tb = get_taskbar_rect()
+        if tb: y = tb[1] - h
+        else: y = self.winfo_screenheight() - h - 48
+        self.geometry(f"{self._cw}x{h}+{self.winfo_x()}+{y}")
+        self._compact_f.place(relx=0, rely=0, relwidth=1, relheight=1)
+        self.after(200, self._apply_acrylic_now)
+
+    def _on_click(self, e=None):
+        if self._expanded:
+            self._show_compact()
+        elif not self._busy:
+            self._show_expand()
+
+    # ─── 数据缓存 ────────────────────────────────────────
+    _c_cost = "¥ —"; _c_tok = "—"; _c_toks = ""
+    _c_cache = "—"; _c_caches = ""; _c_req = "—"
+
+    # ─── 动画 ────────────────────────────────────────────
     def _anim(self):
         self._pa += 0.04
-        r = int(150 + 60*(math.sin(self._pa)+1)/2)
-        g = int(210 + 30*(math.sin(self._pa+1.5)+1)/2)
-        b = int(240 + 15*(math.sin(self._pa-1)+1)/2)
+        r = int(120 + 80*(math.sin(self._pa)+1)/2)
+        g = int(200 + 40*(math.sin(self._pa+1.5)+1)/2)
+        b = int(230 + 25*(math.sin(self._pa-1)+1)/2)
         c = f"#{min(255,r):02x}{min(255,g):02x}{min(255,b):02x}"
         if hasattr(self, 'tl'): self.tl.configure(text_color=c)
         self._aid = self.after(40, self._anim)
 
-    # ═══════════════════════════════════════════════════════
-    #  折叠/展开
-    # ═══════════════════════════════════════════════════════
-    def _on_click(self, e):
-        """单击切换展开/折叠"""
-        if e.y < 38:  # 点击主条区域
-            self._expanded = not self._expanded
-            if self._expanded:
-                self._show_expanded()
-            else:
-                self._show_compact()
-
-    def _on_enter(self, e):
-        if not self._expanded:
-            self.configure(fg_color="#111522")
-
-    def _on_leave(self, e):
-        if not self._expanded:
-            self.configure(fg_color=A["bg"])
-
-    def _rclick(self, e):
-        m = ctk.CTkToplevel(self); m.overrideredirect(True)
-        m.configure(fg_color=A["card"])
-        m.geometry(f"105x80+{e.x_root}+{e.y_root}")
-        ctk.CTkButton(m, text="⚙ 设置", font=ff(9), fg_color="transparent",
-                     command=lambda: [m.destroy(), self._settings()]
-                     ).pack(fill="x", padx=2, pady=1)
-        ctk.CTkButton(m, text="最小化到托盘", font=ff(9), fg_color="transparent",
-                     command=lambda: [m.destroy(), self._to_tray()]
-                     ).pack(fill="x", padx=2, pady=1)
-        ctk.CTkButton(m, text="退出", font=ff(9), fg_color="transparent",
-                     command=lambda: [m.destroy(), self._tray_quit()]
-                     ).pack(fill="x", padx=2, pady=1)
-        m.focus_set(); m.bind("<FocusOut>", lambda _: m.destroy())
-
-    # ═══════════════════════════════════════════════════════
-    #  UI — 紧凑模式 (默认)
-    # ═══════════════════════════════════════════════════════
-    def _build_compact(self):
-        self._compact_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self._compact_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
-
-        # 消费金额 — 主体
-        self.cost_v = ctk.CTkLabel(self._compact_frame, text="—",
-                                    font=ff(22, "bold"), text_color=A["pink"])
-        self.cost_v.pack(side="left", padx=(10, 4))
-
-        # 分隔
-        ctk.CTkFrame(self._compact_frame, width=1, fg_color=A["border"]
-                    ).pack(side="left", fill="y", padx=4, pady=6)
-
-        # 右侧信息
-        ri = ctk.CTkFrame(self._compact_frame, fg_color="transparent")
-        ri.pack(side="left", fill="y", pady=2)
-        self.bal_mini = ctk.CTkLabel(ri, text="余额 —", font=ff(9), text_color=A["text2"])
-        self.bal_mini.pack(anchor="w")
-        self.tok_mini = ctk.CTkLabel(ri, text="Token —", font=ff(9), text_color=A["text2"])
-        self.tok_mini.pack(anchor="w")
-
-        # 右侧工具栏
-        rt = ctk.CTkFrame(self._compact_frame, fg_color="transparent")
-        rt.pack(side="right", padx=(0, 8))
-        self.tl = ctk.CTkLabel(rt, text="DS", font=ff(10, "bold"), text_color=A["cyan"])
-        self.tl.pack(side="left")
-        ctk.CTkButton(rt, text="⚙", width=16, height=16, font=ff(8),
-                     fg_color="transparent", hover_color=A["border"],
-                     text_color=A["text2"],
-                     command=self._settings).pack(side="left", padx=1)
-
-    def _show_compact(self):
-        """折叠回窄条"""
-        self._expanded = False
-        if hasattr(self, '_expand_frame'):
-            self._expand_frame.destroy()
-        w, h = self._compact_w, self._compact_h
-        x = self.winfo_x()
-        tb = get_taskbar_rect()
-        if tb:
-            y = tb[1] - h - 2
-        else:
-            y = self.winfo_screenheight() - h - 52
-        self.geometry(f"{w}x{h}+{x}+{y}")
-        self._compact_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
-
-    def _show_expanded(self):
-        """展开显示详情"""
-        self._expanded = True
-        h = self._expand_h
-        x = self.winfo_x()
-        tb = get_taskbar_rect()
-        if tb:
-            y = tb[1] - h - 2
-        else:
-            y = self.winfo_screenheight() - h - 52
-        self.geometry(f"{self._compact_w}x{h}+{x}+{y}")
-
-        # 隐藏紧凑层
-        self._compact_frame.place_forget()
-
-        # 展开详情层
-        self._expand_frame = ctk.CTkFrame(self, fg_color="transparent")
-        self._expand_frame.place(relx=0, rely=0, relwidth=1, relheight=1)
-
-        # 标题行
-        top = ctk.CTkFrame(self._expand_frame, fg_color="transparent", height=22)
-        top.pack(fill="x", padx=8, pady=(4, 0))
-        self.tl2 = ctk.CTkLabel(top, text="DeepSeek", font=ff(12, "bold"),
-                                text_color=A["cyan"])
-        self.tl2.pack(side="left")
-        ctk.CTkButton(top, text="—", width=18, height=18, font=ff(9),
-                     fg_color="transparent", hover_color=A["border"],
-                     text_color=A["text2"],
-                     command=self._show_compact).pack(side="right", padx=1)
-
-        # 消费 — 大号
-        cost_f = ctk.CTkFrame(self._expand_frame, fg_color="transparent")
-        cost_f.pack(fill="x", padx=12, pady=(8, 0))
-        self.exp_cost_v = ctk.CTkLabel(cost_f, text="—", font=ff(28, "bold"),
-                                        text_color=A["pink"])
-        self.exp_cost_v.pack(side="left")
-        self.exp_cost_l = ctk.CTkLabel(cost_f, text="今日消费", font=ff(10),
-                                        text_color=A["text2"])
-        self.exp_cost_l.pack(side="left", padx=(6, 0))
-
-        # 余额
-        self.exp_bal = ctk.CTkLabel(self._expand_frame, text="余额 — | 赠 — | 充 —",
-                                     font=ff(9), text_color=A["text2"])
-        self.exp_bal.pack(padx=12, pady=(2, 0), anchor="w")
-
-        ctk.CTkFrame(self._expand_frame, height=1, fg_color=A["border"]
-                    ).pack(fill="x", padx=16, pady=4)
-
-        # Token
-        self.exp_tok_v = ctk.CTkLabel(self._expand_frame, text="—",
-                                       font=ff(14, "bold"), text_color=A["green"])
-        self.exp_tok_v.pack(padx=12, anchor="w")
-        self.exp_tok_s = ctk.CTkLabel(self._expand_frame, text="今日 Token",
-                                       font=ff(9), text_color=A["text2"])
-        self.exp_tok_s.pack(padx=12, anchor="w")
-
-        ctk.CTkFrame(self._expand_frame, height=1, fg_color=A["border"]
-                    ).pack(fill="x", padx=20, pady=3)
-
-        # 缓存
-        self.exp_cache_v = ctk.CTkLabel(self._expand_frame, text="—",
-                                         font=ff(14, "bold"), text_color=A["purple"])
-        self.exp_cache_v.pack(padx=12, anchor="w")
-        self.exp_cache_s = ctk.CTkLabel(self._expand_frame, text="缓存命中率",
-                                         font=ff(9), text_color=A["text2"])
-        self.exp_cache_s.pack(padx=12, anchor="w")
-
-        ctk.CTkFrame(self._expand_frame, height=1, fg_color=A["border"]
-                    ).pack(fill="x", padx=20, pady=3)
-
-        # 请求
-        self.exp_req_v = ctk.CTkLabel(self._expand_frame, text="—",
-                                       font=ff(14, "bold"), text_color=A["orange"])
-        self.exp_req_v.pack(padx=12, anchor="w")
-        self.exp_req_s = ctk.CTkLabel(self._expand_frame, text="今日请求",
-                                       font=ff(9), text_color=A["text2"])
-        self.exp_req_s.pack(padx=12, anchor="w")
-
-        # 状态
-        self.exp_sts = ctk.CTkLabel(self._expand_frame, text="",
-                                     font=ff(8), text_color=A["text2"])
-        self.exp_sts.pack(pady=(4, 2))
-
-        # 刷新展开视图
-        self._update_expanded()
-
-    def _update_expanded(self):
-        """把已有的数据同步到展开视图"""
-        if not self._expanded: return
-        # 同步紧凑视图的值
-        self.exp_cost_v.configure(text=self.cost_v.cget("text"))
-        # 余额
-        if hasattr(self, '_last_bal_text'):
-            self.exp_bal.configure(text=self._last_bal_text)
-        self.exp_tok_v.configure(text=self.tok_v_buf if hasattr(self, '_tok_v_text') else "—")
-        self.exp_tok_s.configure(text=self._tok_s_text if hasattr(self, '_tok_s_text') else "今日 Token")
-        self.exp_cache_v.configure(text=self._cache_v_text if hasattr(self, '_cache_v_text') else "—")
-        self.exp_cache_s.configure(text=self._cache_s_text if hasattr(self, '_cache_s_text') else "缓存命中率")
-        self.exp_req_v.configure(text=self._req_v_text if hasattr(self, '_req_v_text') else "—")
-
-    # ═══════════════════════════════════════════════════════
-    #  控制
-    # ═══════════════════════════════════════════════════════
+    # ─── 控制 ────────────────────────────────────────────
     def _start(self):
         self._stop()
         self._tid = self.after(self.cfg.interval * 1000, self._tick)
@@ -449,9 +446,7 @@ class App(ctk.CTk):
         if not self._busy: self._refresh()
         self._tid = self.after(self.cfg.interval * 1000, self._tick)
 
-    # ═══════════════════════════════════════════════════════
-    #  数据
-    # ═══════════════════════════════════════════════════════
+    # ─── 数据 ────────────────────────────────────────────
     def _refresh(self):
         if self._busy or not self.cfg.key: return
         self._busy = True
@@ -475,9 +470,13 @@ class App(ctk.CTk):
             self.cfg.last_bal = bal.total
 
             if not self._usage: self._fetch_usage()
-            self._update_today()
+            self._update()
+            ts = datetime.now().strftime("%H:%M:%S")
+            self.sts.configure(text=f"✓ {ts}")
+            if self._expanded and hasattr(self, 'ex_sts'):
+                self.ex_sts.configure(text=f"✓ {ts}")
         else:
-            self.cost_v.configure(text="✗")
+            self.sts.configure(text="✗")
 
     def _fetch_usage(self):
         end = date.today(); start = end - timedelta(29)
@@ -500,79 +499,70 @@ class App(ctk.CTk):
         self._usage = sorted(days.values(), key=lambda x: x.date)
         self.cfg.save_usage(self._usage)
         self._calc_cache()
-        self._update_today()
 
-    def _update_today(self):
+    def _update(self):
         td = date.today().isoformat()
         c = self.cfg.get_c().get(td)
         ud = None; today = date.today()
         for u in self._usage:
             if u.date == today: ud = u; break
 
-        sym = "¥"
+        sym = "¥" if self._bal and self._bal.currency == "CNY" else "¥"
         if self._bal: sym = "¥" if self._bal.currency == "CNY" else "$"
 
         if ud and ud.tokens > 0:
-            cost_text = f"{sym}{ud.cost:.2f}"
-            tok_text = f"{self._fmt(ud.tokens)} Token"
-            tok_sub = f"入{self._fmt(ud.prompt_tokens)} 出{self._fmt(ud.completion_tokens)}"
-            req_text = str(ud.requests)
-            req_sub = "今日请求 (官方)"
+            cost = f"{sym}{ud.cost:.2f}"
+            tok = f"{self._fmt(ud.tokens)} Token"
+            toks = f"入 {self._fmt(ud.prompt_tokens)}  出 {self._fmt(ud.completion_tokens)}"
+            req = f"请求 {ud.requests} 次"
+            req_src = "(官方)"
         elif c and c["tokens"] > 0:
-            cost_text = f"{sym}{c['cost']:.2f}"
-            tok_text = f"~{self._fmt(c['tokens'])} Token"
-            tok_sub = f"¥{c['cost']:.2f} · {c['events']}次 (估)"
-            req_text = str(c["events"])
-            req_sub = "今日请求 (追踪)"
+            cost = f"{sym}{c['cost']:.2f}"
+            tok = f"~{self._fmt(c['tokens'])} Token"
+            toks = f"¥{c['cost']:.2f} · {c['events']}次"
+            req = f"请求 {c['events']} 次"
+            req_src = "(追踪)"
         else:
-            cost_text = "—"; tok_text = "—"; tok_sub = "今日 Token"
-            req_text = "—"; req_sub = "今日请求"
+            cost = "¥ —"; tok = "Token —"; toks = ""; req = "请求 —"; req_src = ""
 
         # 紧凑视图
-        self.cost_v.configure(text=cost_text)
-        self.bal_mini.configure(text=self._last_bal_text if hasattr(self, '_last_bal_text')
-                                else f"余额 {sym}—")
-        self.tok_mini.configure(text=tok_text)
-        self._tok_v_text = tok_text; self._tok_s_text = tok_sub
-        self._req_v_text = req_text
+        self.cost_v.configure(text=cost)
+        self.bal_m.configure(text=self._last_bal_text or "余额 —")
+        self.tok_m.configure(text=tok)
+        cr = f"{self._cache_rate:.1f}%" if self._cache_rate > 0 else "—"
+        self.cache_m.configure(text=cr)
 
-        # 展开视图 (如果当前展开)
-        if self._expanded and hasattr(self, 'exp_cost_v'):
-            self.exp_cost_v.configure(text=cost_text)
-            if hasattr(self, '_last_bal_text'):
-                self.exp_bal.configure(text=self._last_bal_text)
-            self.exp_tok_v.configure(text=tok_text)
-            self.exp_tok_s.configure(text=tok_sub)
-            self.exp_req_v.configure(text=req_text)
-            self.exp_req_s.configure(text=req_sub)
+        self._c_cost = cost; self._c_tok = tok; self._c_toks = toks
+        self._c_cache = cr; self._c_req = req
+
+        # 展开视图
+        if self._expanded:
+            if hasattr(self, 'ex_cost'): self.ex_cost.configure(text=cost)
+            if hasattr(self, 'ex_bal'): self.ex_bal.configure(text=self._last_bal_text)
+            if hasattr(self, 'ex_tok'): self.ex_tok.configure(text=tok)
+            if hasattr(self, 'ex_toks'): self.ex_toks.configure(text=f"{toks} {req_src}")
+            if hasattr(self, 'ex_cache'): self.ex_cache.configure(text=cr)
+            if hasattr(self, 'ex_caches'):
+                if self._usage:
+                    tp = sum(d.prompt_tokens for d in self._usage)
+                    tc = sum(d.completion_tokens for d in self._usage)
+                    self.ex_caches.configure(text=f"入 {self._fmt(tp)}  出 {self._fmt(tc)} (近30天)")
+            if hasattr(self, 'ex_req'): self.ex_req.configure(text=req)
 
     def _calc_cache(self):
         tp = sum(d.prompt_tokens for d in self._usage)
         tc = sum(d.completion_tokens for d in self._usage)
-        if tp == 0:
-            crt = "N/A"; cst = "缓存命中率 (暂无)"; self._cache_v_text = crt; self._cache_s_text = cst
-            if self._expanded and hasattr(self, 'exp_cache_v'):
-                self.exp_cache_v.configure(text=crt); self.exp_cache_s.configure(text=cst)
-            return
+        if tp == 0: self._cache_rate = 0; return
         pr = self.cfg.pricing("deepseek-chat")
         no_cache = (tp/1_000_000)*pr["input"] + (tc/1_000_000)*pr["output"]
         actual = sum(d.cost for d in self._usage)
-        rate = 0.0
-        if actual < no_cache * 0.99:
-            saved = no_cache - actual; diff = pr["input"] - pr["cache_hit"]
-            if diff > 0: rate = min(saved / diff * 1_000_000 / tp * 100, 99.9)
-        self._cache_rate = rate
-        crt = f"{rate:.1f}%"
-        cst = f"近30天 {self._fmt(tp+tc)}T · 入{self._fmt(tp)} 出{self._fmt(tc)}"
-        self._cache_v_text = crt; self._cache_s_text = cst
-        if self._expanded and hasattr(self, 'exp_cache_v'):
-            self.exp_cache_v.configure(text=crt); self.exp_cache_s.configure(text=cst)
+        if actual >= no_cache * 0.99: self._cache_rate = 0; return
+        saved = no_cache - actual; diff = pr["input"] - pr["cache_hit"]
+        if diff > 0: self._cache_rate = min(saved/diff*1_000_000/tp*100, 99.9)
 
-    # ═══════════════════════════════════════════════════════
-    #  设置
-    # ═══════════════════════════════════════════════════════
+    # ─── 设置 ────────────────────────────────────────────
     def _settings(self):
-        dlg = ctk.CTkToplevel(self); dlg.title("设置"); dlg.geometry("420x470")
+        dlg = ctk.CTkToplevel(self); dlg.title("设置"); dlg.geometry("420x460")
         dlg.configure(fg_color=A["bg"]); dlg.transient(self); dlg.grab_set()
 
         ctk.CTkLabel(dlg, text="API Key", font=ff(13, "bold"),
@@ -633,7 +623,7 @@ class App(ctk.CTk):
                            command=_fetch, font=ff(10)); fb2.pack(pady=(0, 4))
 
         scroll = ctk.CTkScrollableFrame(dlg, fg_color=A["card"],
-                                         corner_radius=8, height=150)
+                                         corner_radius=8, height=140)
         scroll.pack(fill="x", padx=16, pady=2)
         hdr = ctk.CTkFrame(scroll, fg_color="transparent"); hdr.pack(fill="x")
         for t in ["模型", "输入", "输出", "缓存"]:
@@ -652,12 +642,9 @@ class App(ctk.CTk):
             ch2 = ctk.StringVar(value=str(ct.get(mn, DEFAULT_PRICING[mn]).get(
                 "cache_hit", DEFAULT_PRICING[mn].get("cache_hit", 0.02))))
             self._pe[mn] = (i2, o2, ch2)
-            ctk.CTkEntry(row, width=50, height=20, textvariable=i2,
-                        font=ff(9)).pack(side="left", padx=2, expand=True)
-            ctk.CTkEntry(row, width=50, height=20, textvariable=o2,
-                        font=ff(9)).pack(side="left", padx=2, expand=True)
-            ctk.CTkEntry(row, width=50, height=20, textvariable=ch2,
-                        font=ff(9)).pack(side="left", padx=2, expand=True)
+            for v in [i2, o2, ch2]:
+                ctk.CTkEntry(row, width=50, height=20, textvariable=v,
+                            font=ff(9)).pack(side="left", padx=2, expand=True)
         bf = ctk.CTkFrame(dlg, fg_color="transparent"); bf.pack(fill="x", padx=16, pady=(6, 10))
         def _reset():
             for mn, (iv2, ov2, cv2) in self._pe.items():
