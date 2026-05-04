@@ -605,12 +605,12 @@ public partial class MainUI : Control
 			var sliderRow = new HBoxContainer(); var sliderCenter = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; sliderRow.AddChild(sliderCenter);
 			var sliderInner = new HBoxContainer(); sliderCenter.AddChild(sliderInner);
 			sliderInner.AddChild(new Label { Text = "采集" }.WithFont(11, UITheme.TextGreen));
-			var gs = new HSlider { CustomMinimumSize = new Vector2I(80, 14), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
+			var gs = new HSlider { CustomMinimumSize = new Vector2I(100, 24), SizeFlagsHorizontal = SizeFlags.ExpandFill, MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
 			gs.ValueChanged += (v) => { GM.SetOuterRoles((int)v, GM.OuterTradeRatio); RefreshDisciples(); };
 			sliderInner.AddChild(gs); sliderInner.AddChild(new Label { Text = GM.OuterGatherRatio + "%" }.WithFont(11, UITheme.TextDim));
 			sliderInner.AddChild(new Control { CustomMinimumSize = new Vector2I(14, 0) });
 			sliderInner.AddChild(new Label { Text = "经商" }.WithFont(11, UITheme.Gold));
-			var ts = new HSlider { CustomMinimumSize = new Vector2I(80, 14), MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
+			var ts = new HSlider { CustomMinimumSize = new Vector2I(100, 24), SizeFlagsHorizontal = SizeFlags.ExpandFill, MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
 			ts.ValueChanged += (v) => { GM.SetOuterRoles(GM.OuterGatherRatio, (int)v); RefreshDisciples(); };
 			sliderInner.AddChild(ts); sliderInner.AddChild(new Label { Text = GM.OuterTradeRatio + "%" }.WithFont(11, UITheme.TextDim));
 			c.AddChild(sliderRow);

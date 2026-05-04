@@ -14,7 +14,7 @@ config/name="SwordFateCultivationRecord"
 config/description="剑缘修仙录 - A cultivation sect management simulation game"
 run/main_scene="res://Scenes/StartMenu.tscn"
 config/features=PackedStringArray("4.5", "C#")
-config/icon="res://icon.svg"
+config/icon="res://icon.png"
 
 [autoload]
 
