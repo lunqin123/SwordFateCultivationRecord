@@ -601,19 +601,34 @@ public partial class MainUI : Control
 			string effTag2 = eff3 >= 1.0 ? "" : $" (超限{eff3*100:F0}%)";
 			c.AddChild(new Label { Text = $"外门 {GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}人: 采集{gCnt2} {tCnt2}经商 {iCnt2}待命{effTag2}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
 
-			// Sliders row - proper HBoxContainer, NO CenterContainer stacking
-			var sliderRow = new HBoxContainer(); var sliderCenter = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; sliderRow.AddChild(sliderCenter);
-			var sliderInner = new HBoxContainer(); sliderCenter.AddChild(sliderInner);
-			sliderInner.AddChild(new Label { Text = "采集" }.WithFont(11, UITheme.TextGreen));
-			var gs = new HSlider { CustomMinimumSize = new Vector2I(100, 24), SizeFlagsHorizontal = SizeFlags.ExpandFill, MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterGatherRatio };
-			gs.ValueChanged += (v) => { GM.SetOuterRoles((int)v, GM.OuterTradeRatio); RefreshDisciples(); };
-			sliderInner.AddChild(gs); sliderInner.AddChild(new Label { Text = GM.OuterGatherRatio + "%" }.WithFont(11, UITheme.TextDim));
-			sliderInner.AddChild(new Control { CustomMinimumSize = new Vector2I(14, 0) });
-			sliderInner.AddChild(new Label { Text = "经商" }.WithFont(11, UITheme.Gold));
-			var ts = new HSlider { CustomMinimumSize = new Vector2I(100, 24), SizeFlagsHorizontal = SizeFlags.ExpandFill, MinValue = 0, MaxValue = 100, Step = 5, Value = GM.OuterTradeRatio };
-			ts.ValueChanged += (v) => { GM.SetOuterRoles(GM.OuterGatherRatio, (int)v); RefreshDisciples(); };
-			sliderInner.AddChild(ts); sliderInner.AddChild(new Label { Text = GM.OuterTradeRatio + "%" }.WithFont(11, UITheme.TextDim));
-			c.AddChild(sliderRow);
+			// +/- buttons for role adjustment (no sliders — ScrollContainer eats drag)
+			var roleRow = new HBoxContainer(); var roleCenter = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; roleRow.AddChild(roleCenter);
+			var roleInner = new HBoxContainer(); roleCenter.AddChild(roleInner);
+
+			Action buildRole = () => {
+				roleInner.FreeChildren();
+				// Gather
+				roleInner.AddChild(new Label { Text = "采集" }.WithFont(12, UITheme.TextGreen));
+				var gMinus = SmallBtn("−"); gMinus.CustomMinimumSize = new Vector2I(26, 26);
+				gMinus.Pressed += () => { GM.SetOuterRoles(GM.OuterGatherRatio - 5, GM.OuterTradeRatio); RefreshDisciples(); };
+				roleInner.AddChild(gMinus);
+				roleInner.AddChild(new Label { Text = GM.OuterGatherRatio + "%", CustomMinimumSize = new Vector2I(38, 0), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+				var gPlus = SmallBtn("+"); gPlus.CustomMinimumSize = new Vector2I(26, 26);
+				gPlus.Pressed += () => { GM.SetOuterRoles(GM.OuterGatherRatio + 5, GM.OuterTradeRatio); RefreshDisciples(); };
+				roleInner.AddChild(gPlus);
+				roleInner.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
+				// Trade
+				roleInner.AddChild(new Label { Text = "经商" }.WithFont(12, UITheme.Gold));
+				var tMinus = SmallBtn("−"); tMinus.CustomMinimumSize = new Vector2I(26, 26);
+				tMinus.Pressed += () => { GM.SetOuterRoles(GM.OuterGatherRatio, GM.OuterTradeRatio - 5); RefreshDisciples(); };
+				roleInner.AddChild(tMinus);
+				roleInner.AddChild(new Label { Text = GM.OuterTradeRatio + "%", CustomMinimumSize = new Vector2I(38, 0), HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+				var tPlus = SmallBtn("+"); tPlus.CustomMinimumSize = new Vector2I(26, 26);
+				tPlus.Pressed += () => { GM.SetOuterRoles(GM.OuterGatherRatio, GM.OuterTradeRatio + 5); RefreshDisciples(); };
+				roleInner.AddChild(tPlus);
+			};
+			buildRole();
+			c.AddChild(roleRow);
 
 			// Recruit button
 			var obr = new HBoxContainer(); obr.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
