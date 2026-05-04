@@ -37,3 +37,6 @@ build/
 dist/
 *.exe
 *.bat
+DeepSeekDeskBand/bin/
+DeepSeekDeskBand/obj/
+*.uid
