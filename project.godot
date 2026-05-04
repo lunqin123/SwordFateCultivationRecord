@@ -19,7 +19,6 @@ config/icon="res://icon.svg"
 [autoload]
 
 GameManager="*res://Scenes/GameManager.tscn"
-Panku="*res://addons/panku_console/console.tscn"
 
 [dotnet]
 

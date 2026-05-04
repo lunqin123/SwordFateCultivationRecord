@@ -4,7 +4,7 @@ public partial class MainUI : Control
 {
 	private GameManager GM => GameManager.Instance;
 	private static readonly string[] TaskNames = { "修炼", "训练", "采集", "炼丹", "炼器", "授课", "守卫", "探索", "休息" };
-	private static readonly string[] TabLabels = { "总览", "弟子", "营造", "灵筑", "道缘", "宗门令", "记事", "卷宗" };
+	private static readonly string[] TabLabels = { "总览", "弟子", "营造", "灵筑", "道缘", "门令", "记事", "卷宗" };
 	private int _activeTab;
 
 	// Top bar
@@ -53,6 +53,8 @@ public partial class MainUI : Control
 	private Window _tournamentConfirmPopup = null!;
 	private HBoxContainer _candidateRow = null!;
 	private Label _tournamentLabel = null!;
+	private VBoxContainer _recruitCardContainer = null!;
+	private ColorRect _dayFlash = null!;
 
 	// Smart/Batch assign
 	private Window _smartPopup = null!;
@@ -113,7 +115,7 @@ public partial class MainUI : Control
 		sTitle.AddThemeFontSizeOverride("font_size", 11); sTitle.AddThemeColorOverride("font_color", UITheme.TextDim);
 		sidebarVBox.AddChild(sTitle); sidebarVBox.AddChild(SP(12));
 
-		var tabIcons = new[] { "总览.png","弟子.png","营造.png","灵筑.png","道缘.png","宗门令.png","记事.png","卷宗.png" };
+		var tabIcons = new[] { "总览.png","弟子.png","营造.png","灵筑.png","道缘.png","门令.png","记事.png","卷宗.png" };
 		for (int i = 0; i < TabLabels.Length; i++)
 		{
 			int tabIdx = i;
@@ -188,7 +190,7 @@ public partial class MainUI : Control
 		timeLabel.AddThemeFontSizeOverride("font_size", 12); timeLabel.AddThemeColorOverride("font_color", UITheme.TextDim);
 		bottomHBox.AddChild(timeLabel); bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
 		_nextDayBtn = Btn("下一日"); _nextDayBtn.CustomMinimumSize = new Vector2I(110, 44); _nextDayBtn.AddThemeFontSizeOverride("font_size", 15); _nextDayBtn.AddThemeColorOverride("font_color", UITheme.Gold);
-		bottomHBox.AddChild(_nextDayBtn); _nextDayBtn.Pressed += () => { GM.NextDay(); RefreshAll(); };
+		bottomHBox.AddChild(_nextDayBtn); _nextDayBtn.Pressed += () => { UIAnimator.ButtonPress(_nextDayBtn); GM.NextDay(); RefreshAll(); };
 		bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
 		var recruitBtn = Btn("入门大比"); recruitBtn.CustomMinimumSize = new Vector2I(110, 38);
 		recruitBtn.Pressed += () => { UIAnimator.ButtonPress(recruitBtn); _tournamentConfirmPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_tournamentConfirmPopup.GetChild(0)); };
@@ -209,6 +211,10 @@ public partial class MainUI : Control
 
 		for (int i = 0; i < 8; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		SwitchToTab(0);
+
+		_dayFlash = new ColorRect { Color = new Color(1, 1, 1, 0), MouseFilter = MouseFilterEnum.Ignore };
+		_dayFlash.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		AddChild(_dayFlash);
 	}
 
 	// ===================== POPUPS =====================
@@ -295,15 +301,18 @@ public partial class MainUI : Control
 
 	void BuildRecruitPopup()
 	{
-		_recruitPopup = new Window { Title = "入门大比 — 选拔贤才", Size = new Vector2I(860, 480), Visible = false, Exclusive = true, Unresizable = true };
+		_recruitPopup = new Window { Title = "内门选拔", Size = new Vector2I(860, 520), Visible = false, Exclusive = true, Unresizable = true };
 		_recruitPopup.CloseRequested += () => { _recruitPopup.Hide(); GM.CancelRecruit(); };
-		AddChild(_recruitPopup); var rv = new VBoxContainer(); rv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); _recruitPopup.AddChild(rv);
+		AddChild(_recruitPopup);
+		var rv = new VBoxContainer(); rv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect); _recruitPopup.AddChild(rv);
 		rv.AddChild(SP(10));
-		var rTitle = new Label { Text = "— 入门大比 —", HorizontalAlignment = HorizontalAlignment.Center }; rTitle.AddThemeFontSizeOverride("font_size", 22); rTitle.AddThemeColorOverride("font_color", UITheme.Gold); rv.AddChild(rTitle);
-		var rSub = new Label { Text = "七日大比落幕，求道者云集，请选择一位收入门下", HorizontalAlignment = HorizontalAlignment.Center }; rSub.AddThemeFontSizeOverride("font_size", 13); rSub.AddThemeColorOverride("font_color", UITheme.TextDim); rv.AddChild(rSub); rv.AddChild(SP(12));
+		rv.AddChild(new Label { Text = "— 内门选拔 —", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(22, UITheme.Gold));
+		var subLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center }; subLabel.AddThemeFontSizeOverride("font_size", 13); subLabel.AddThemeColorOverride("font_color", UITheme.TextDim); subLabel.Name = "SubLabel"; rv.AddChild(subLabel);
+		var pickLabel = new Label { HorizontalAlignment = HorizontalAlignment.Center }; pickLabel.AddThemeFontSizeOverride("font_size", 12); pickLabel.AddThemeColorOverride("font_color", UITheme.TextBlue); pickLabel.Name = "PickLabel"; rv.AddChild(pickLabel);
+		rv.AddChild(SP(10));
 		var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; rv.AddChild(scroll);
-		_candidateRow = new HBoxContainer(); scroll.AddChild(_candidateRow);
-		rv.AddChild(SP(8));
+		_recruitCardContainer = new VBoxContainer(); scroll.AddChild(_recruitCardContainer);
+		rv.AddChild(SP(4));
 		var cancelBtn = new Button { Text = "尽舍之（不费天时）", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(200, 40) };
 		cancelBtn.AddThemeFontSizeOverride("font_size", 14); cancelBtn.AddThemeColorOverride("font_color", UITheme.TextDim); cancelBtn.AddThemeColorOverride("font_hover_color", UITheme.Crimson);
 		cancelBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); cancelBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
@@ -322,16 +331,17 @@ public partial class MainUI : Control
 		cv.AddChild(new Label { Text = "广发英雄帖，七日后召开选拔大会（消耗1日）", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
 		cv.AddChild(SP(14));
 		var btnRow = new HBoxContainer(); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; btnRow.AddChild(bc);
+		var innerBtnRow = new HBoxContainer(); bc.AddChild(innerBtnRow);
 		var okBtn = new Button { Text = "确定", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 36) };
 		okBtn.AddThemeFontSizeOverride("font_size", 14); okBtn.AddThemeColorOverride("font_color", UITheme.Gold); okBtn.AddThemeColorOverride("font_hover_color", new Color(1,1,1));
 		okBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); okBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
 		okBtn.Pressed += () => { _tournamentConfirmPopup.Hide(); AudioManager.PlayClick(); GM.ScheduleRecruitTournament(); };
-		bc.AddChild(okBtn); bc.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
+		innerBtnRow.AddChild(okBtn); innerBtnRow.AddChild(new Control { CustomMinimumSize = new Vector2I(12, 0) });
 		var cancelBtn = new Button { Text = "取消", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 36) };
 		cancelBtn.AddThemeFontSizeOverride("font_size", 14); cancelBtn.AddThemeColorOverride("font_color", UITheme.TextDim);
 		cancelBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); cancelBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
 		cancelBtn.Pressed += () => _tournamentConfirmPopup.Hide();
-		bc.AddChild(cancelBtn); cv.AddChild(btnRow); cv.AddChild(SP(10));
+		innerBtnRow.AddChild(cancelBtn); cv.AddChild(btnRow); cv.AddChild(SP(10));
 	}
 
 
@@ -476,7 +486,14 @@ public partial class MainUI : Control
 		EventBus.DiscipleRecruited += OnDiscipleChanged; EventBus.DiscipleDeparted += OnDiscipleChanged;
 		EventBus.RecruitSelectionReady += ShowRecruitSelection;
 	}
-	void OnDayPassed(int _, int __, int ___) => RefreshAll();
+	void OnDayPassed(int _, int __, int ___)
+	{
+		RefreshAll();
+		if (_dayFlash == null) return;
+		_dayFlash.Color = new Color(0.95f, 0.78f, 0.35f, 0.18f);
+		var t = _dayFlash.CreateTween();
+		t.TweenProperty(_dayFlash, "color", new Color(1, 1, 1, 0), 0.5f).SetEase(Tween.EaseType.Out);
+	}
 	void OnResourceChanged(ResourceType type, int oldVal, int newVal) { RefreshResources(); if (newVal > oldVal) ShowResourceGain(type, newVal - oldVal); }
 
 	void ShowResourceGain(ResourceType type, int delta)
@@ -601,7 +618,8 @@ public partial class MainUI : Control
 		c.AddChild(autoRow);
 		c.AddChild(SP(8));
 
-		var cardGrid = new GridContainer { Columns = 3 }; c.AddChild(cardGrid);
+		int cols = Math.Min(3, Math.Max(1, GM.Disciples.Count));
+		var cardGrid = new GridContainer { Columns = cols }; var gridWrap = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; gridWrap.AddChild(cardGrid); c.AddChild(gridWrap);
 		foreach (var d in GM.Disciples.AllDisciples)
 		{
 			int did = d.Id; var card = MakeCard(220, 320); var cv = (VBoxContainer)card.GetChild(0);
@@ -909,10 +927,10 @@ public partial class MainUI : Control
 		int completed = GM.Quests.AllQuests.Count(q => q.Completed);
 		int maxTier = SectQuestSystem.GetMaxTier(GM);
 		string tierDesc = maxTier switch { 1 => "凡品", 2 => "凡品·良品", 3 => "凡品~优品", _ => "凡品~极品" };
-		c.AddChild(HL($"宗门令（{completed}/{GM.Quests.AllQuests.Count}完成）", 18, UITheme.Gold));
+		c.AddChild(HL($"门令（{completed}/{GM.Quests.AllQuests.Count}完成）", 18, UITheme.Gold));
 		c.AddChild(TB($"可接品级: {tierDesc}", UITheme.TextDim, 11));
 		c.AddChild(SP(10));
-		if (GM.Quests.AllQuests.Count == 0) { c.AddChild(TB("暂无宗门令。", UITheme.TextDim, 13)); return; }
+		if (GM.Quests.AllQuests.Count == 0) { c.AddChild(TB("暂无门令。", UITheme.TextDim, 13)); return; }
 
 		foreach (var q in GM.Quests.AllQuests)
 		{
@@ -1015,34 +1033,111 @@ public partial class MainUI : Control
 		var rc = new Dictionary<CultivationRealm, int>(); foreach (var d in GM.Disciples.AllDisciples) { rc.TryGetValue(d.Realm, out int cnt); rc[d.Realm] = cnt + 1; }
 		foreach (var kv in rc.OrderByDescending(kv => (int)kv.Key)) c.AddChild(new Label { Text = $"{RealmNameCN(kv.Key)}: {kv.Value}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, RealmColor(kv.Key)));
 		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
-		c.AddChild(HL("宗门令分布", 16, UITheme.Gold)); c.AddChild(SP(6));
+		c.AddChild(HL("门令分布", 16, UITheme.Gold)); c.AddChild(SP(6));
 		var tc = new int[9]; foreach (var d in GM.Disciples.AllDisciples) tc[(int)d.CurrentTask]++; for (int i = 0; i < TaskNames.Length; i++) if (tc[i] > 0) c.AddChild(new Label { Text = $"{TaskNames[i]}: {tc[i]}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextPrimary));
 	}
 
 	// ===================== RECRUIT / SMART / BATCH =====================
 
-	void ShowRecruitSelection(List<DiscipleData> candidates)
+		void ShowRecruitSelection(List<DiscipleData> candidates)
 	{
-		_candidateRow.FreeChildren();
+		int remaining = GM.TournamentPicksRemaining;
+		if (remaining <= 0) { _recruitPopup.Hide(); RefreshAll(); return; }
+
+		var rv = (VBoxContainer)_recruitPopup.GetChild(0);
+		var subLabel = rv.FindChild("SubLabel") as Label;
+		var pickLabel = rv.FindChild("PickLabel") as Label;
+		if (subLabel != null) subLabel.Text = "七日大比落幕，求道者云集";
+		if (pickLabel != null) pickLabel.Text = $"可选 {remaining} 人收入内门 · 共 {candidates.Count} 人应试";
+
+		// Fortune's Child banner
+		var fortuneChild = candidates.FirstOrDefault(c => c.Trait == "气运之子");
+		if (fortuneChild != null)
+		{
+			var banner = new PanelContainer { CustomMinimumSize = new Vector2I(0, 36) };
+			var bs = new StyleBoxFlat { BgColor = new Color(0.2f, 0.15f, 0.02f), CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6, CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderColor = new Color(1, 0.7f, 0.1f) };
+			banner.AddThemeStyleboxOverride("panel", bs);
+			var bannerText = $"✦ 天降异象！气运之子「{fortuneChild.Name}」出现在选拔中 —— 天赋异禀，万中无一 ✦";
+			var bl2 = new Label { Text = bannerText, HorizontalAlignment = HorizontalAlignment.Center };
+			bl2.AddThemeFontSizeOverride("font_size", 14); bl2.AddThemeColorOverride("font_color", new Color(1, 0.85f, 0.2f));
+			banner.AddChild(bl2);
+			rv.AddChild(banner);
+			rv.MoveChild(banner, 4);
+		}
+
+		_recruitCardContainer.FreeChildren();
+
 		foreach (var d in candidates)
 		{
-			var card = MakeCard(155); var cv = (VBoxContainer)card.GetChild(0);
-			var av = MakeAvatarCircle(d.IsMale, 48); var ac = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; ac.AddChild(av); cv.AddChild(ac); cv.AddChild(SP(3));
-			string gi = d.IsMale ? "♂" : "♀"; cv.AddChild(new Label { Text = $"{gi} {d.Name}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(15, UITheme.Gold)); cv.AddChild(new Label { Text = $"{d.Age}岁", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextDim)); cv.AddChild(SP(3));
-			cv.AddChild(new Label { Text = $"身世: {d.Background}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextPrimary)); cv.AddChild(new Label { Text = $"性格: {d.Personality}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextPrimary));
-			if (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait))
-				cv.AddChild(new Label { Text = $"天赋: {d.Trait}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(11, UITheme.TextOrange));
-				else
-				cv.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 14) });
-			cv.AddChild(SP(3));
-			StatLine(cv, "天赋", d.Talent, UITheme.Gold); StatLine(cv, "悟性", d.Comprehension, UITheme.TextBlue); StatLine(cv, "体质", d.Constitution, UITheme.TextGreen); StatLine(cv, "神识", d.Spirit, new Color(0.7f, 0.3f, 1.0f));
-			cv.AddChild(SP(2));
-			Color rc2 = d.SpiritRoot switch { SpiritualRoot.Heavenly => UITheme.Gold, SpiritualRoot.SingleElement => new Color(1.0f, 0.5f, 0.3f), SpiritualRoot.DualElement => new Color(0.7f, 0.3f, 1.0f), SpiritualRoot.Special => new Color(0.3f, 0.8f, 1.0f), _ => UITheme.TextDim };
-			cv.AddChild(new Label { Text = $"灵根: {d.SpiritRootName}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, rc2)); cv.AddChild(SP(4));
-			var selBtn = new Button { Text = "选 择", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(120, 32) }; selBtn.AddThemeFontSizeOverride("font_size", 13); selBtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); selBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold); selBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); selBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover()); var cp = d; selBtn.Pressed += () => { _recruitPopup.Hide(); GM.ConfirmRecruit(cp); RefreshAll(); }; var sbc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; sbc.AddChild(selBtn); cv.AddChild(sbc);
-			_candidateRow.AddChild(card); _candidateRow.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+			bool isFortune = d.Trait == "气运之子";
+			bool isTopTier = isFortune || d.SpiritRoot == SpiritualRoot.Heavenly || (d.SpiritRoot == SpiritualRoot.SingleElement && d.Talent >= 65);
+			bool isGood = !isTopTier && (d.SpiritRoot == SpiritualRoot.SingleElement || d.SpiritRoot == SpiritualRoot.DualElement || d.Talent >= 55);
+
+			Color cardTint = isFortune ? new Color(0.25f, 0.2f, 0.05f) : isTopTier ? new Color(0.18f, 0.14f, 0.05f) : isGood ? new Color(0.12f, 0.13f, 0.18f) : new Color(0.10f, 0.08f, 0.13f);
+			Color borderC = isFortune ? new Color(1, 0.7f, 0.1f) : isTopTier ? UITheme.Gold : isGood ? new Color(0.3f, 0.5f, 0.8f) : new Color(0.2f, 0.2f, 0.25f);
+			int bw = isFortune ? 2 : isTopTier ? 1 : 0;
+
+			var card = new PanelContainer { CustomMinimumSize = new Vector2I(0, 66), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			var cs = new StyleBoxFlat { BgColor = cardTint, CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6, CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6, BorderWidthBottom = bw, BorderWidthLeft = bw, BorderWidthRight = bw, BorderWidthTop = bw, BorderColor = borderC, ContentMarginLeft = 10, ContentMarginRight = 10, ContentMarginTop = 6, ContentMarginBottom = 6 };
+			card.AddThemeStyleboxOverride("panel", cs);
+			var mainRow = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(mainRow);
+
+			// Avatar
+			var av = MakeAvatarCircle(d.IsMale, 42); mainRow.AddChild(av); mainRow.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+
+			// Name + badge
+			var infoCol = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			var nameRow = new HBoxContainer();
+			string gi = d.IsMale ? "♂" : "♀";
+			Color nc = isFortune ? new Color(1, 0.85f, 0.2f) : isTopTier ? UITheme.Gold : UITheme.TextPrimary;
+			nameRow.AddChild(new Label { Text = gi + " " + d.Name }.WithFont(15, nc));
+			nameRow.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+
+			string badge = d.SpiritRoot switch { SpiritualRoot.Heavenly => "天灵根", SpiritualRoot.SingleElement => "单灵根", SpiritualRoot.DualElement => "双灵根", SpiritualRoot.Special => "异灵根", SpiritualRoot.ThreeElement => "三灵根", _ => "杂灵根" };
+			Color badgeC = d.SpiritRoot switch { SpiritualRoot.Heavenly => new Color(1, 0.75f, 0.1f), SpiritualRoot.SingleElement => new Color(1, 0.5f, 0.2f), SpiritualRoot.DualElement => new Color(0.7f, 0.3f, 1.0f), SpiritualRoot.Special => new Color(0.3f, 0.8f, 1.0f), _ => UITheme.TextDim };
+			var blb = new Label { Text = badge }; blb.AddThemeFontSizeOverride("font_size", 10); blb.AddThemeColorOverride("font_color", badgeC);
+			var bp = new PanelContainer(); bp.AddThemeStyleboxOverride("panel", new StyleBoxFlat { BgColor = new Color(badgeC.R, badgeC.G, badgeC.B, 0.15f), CornerRadiusBottomLeft = 3, CornerRadiusBottomRight = 3, CornerRadiusTopLeft = 3, CornerRadiusTopRight = 3, ContentMarginLeft = 6, ContentMarginRight = 6, ContentMarginTop = 2, ContentMarginBottom = 2 }); bp.AddChild(blb);
+			nameRow.AddChild(bp);
+			infoCol.AddChild(nameRow);
+
+			// Quality + detail
+			string qt = isFortune ? "✦ 气运之子 " : isTopTier ? "▲ 上等 " : isGood ? "● 中等 " : "";
+			Color qc = isFortune ? new Color(1, 0.85f, 0.2f) : isTopTier ? UITheme.Gold : isGood ? UITheme.TextGreen : UITheme.TextDim;
+			string extra = (d.Trait != "无" && !string.IsNullOrEmpty(d.Trait) && !isFortune) ? (" · " + d.Trait) : "";
+			infoCol.AddChild(new Label { Text = qt + d.Age + "岁 · " + d.Background + " · " + d.Personality + extra }.WithFont(11, qc));
+			infoCol.AddChild(new Label { Text = "天赋" + d.Talent + "  悟性" + d.Comprehension + "  体质" + d.Constitution + "  神识" + d.Spirit }.WithFont(11, UITheme.TextDim));
+			mainRow.AddChild(infoCol);
+
+			// Mini stat bars
+			var statCol = new VBoxContainer { CustomMinimumSize = new Vector2I(130, 0) };
+			MiniBar(statCol, "天赋", d.Talent, UITheme.Gold);
+			MiniBar(statCol, "悟性", d.Comprehension, UITheme.TextBlue);
+			MiniBar(statCol, "体质", d.Constitution, UITheme.TextGreen);
+			MiniBar(statCol, "神识", d.Spirit, new Color(0.7f, 0.3f, 1.0f));
+			mainRow.AddChild(statCol); mainRow.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+
+			// Select button
+			var selBtn = new Button { Text = "选 择", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 40) };
+			selBtn.AddThemeFontSizeOverride("font_size", 14);
+			selBtn.AddThemeColorOverride("font_color", isFortune ? new Color(1, 0.85f, 0.2f) : UITheme.TextPrimary);
+			selBtn.AddThemeColorOverride("font_hover_color", isFortune ? new Color(1, 1, 0.5f) : UITheme.Gold);
+			if (isFortune)
+			{
+				var fs = new StyleBoxFlat { BgColor = new Color(0.3f, 0.2f, 0.02f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4, BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderColor = new Color(1, 0.7f, 0.1f) };
+				selBtn.AddThemeStyleboxOverride("normal", fs);
+				selBtn.AddThemeStyleboxOverride("hover", new StyleBoxFlat { BgColor = new Color(0.5f, 0.35f, 0.05f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 });
+			}
+			else
+			{
+				selBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); selBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			}
+			var cp = d; selBtn.Pressed += () => { GM.ConfirmRecruit(cp); if (GM.PendingRecruitCandidates == null) { _recruitPopup.Hide(); RefreshAll(); } };
+			var btnCenter = new CenterContainer(); btnCenter.AddChild(selBtn);
+			mainRow.AddChild(btnCenter);
+			_recruitCardContainer.AddChild(card); _recruitCardContainer.AddChild(SP(4));
 		}
-		_recruitPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_recruitPopup.GetChild(0));
+
+		_recruitPopup.PopupCentered();
 	}
 
 	void ApplySmart(string strategy)
@@ -1168,6 +1263,7 @@ public partial class MainUI : Control
 	static CenterContainer CenteredGrid(GridContainer grid) { var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(grid); return cc; }
 	static PanelContainer MakeCard(int minWidth, int minHeight = 0) { var card = new PanelContainer { CustomMinimumSize = new Vector2I(minWidth, minHeight), ClipContents = true }; var s = UITheme.CardStyle(); s.ContentMarginLeft = 8; s.ContentMarginRight = 8; s.ContentMarginTop = 8; s.ContentMarginBottom = 8; card.AddThemeStyleboxOverride("panel", s); var content = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(content); return card; }
 	static PanelContainer MakeAvatarCircle(bool isMale, int size) { var avatar = new PanelContainer { CustomMinimumSize = new Vector2I(size, size) }; var avatarBg = new StyleBoxFlat { BgColor = isMale ? new Color(0.14f, 0.18f, 0.28f) : new Color(0.26f, 0.12f, 0.20f), CornerRadiusBottomLeft = size / 2, CornerRadiusBottomRight = size / 2, CornerRadiusTopLeft = size / 2, CornerRadiusTopRight = size / 2, BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1, BorderColor = UITheme.GoldDark }; avatar.AddThemeStyleboxOverride("panel", avatarBg); var avatarTex = SpriteSheetManager.GetAvatar(isMale); if (avatarTex != null) avatar.AddChild(new TextureRect { Texture = avatarTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, CustomMinimumSize = new Vector2I(size - 4, size - 4) }); else { var label = new Label { Text = isMale ? "♂" : "♀", HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center }; label.AddThemeFontSizeOverride("font_size", size / 3 + 6); label.AddThemeColorOverride("font_color", isMale ? new Color(0.5f, 0.7f, 1.0f) : new Color(1.0f, 0.5f, 0.7f)); avatar.AddChild(label); } return avatar; }
+	static void MiniBar(VBoxContainer parent, string label, int value, Color color) { var row = new HBoxContainer(); row.AddChild(new Label { Text = label, CustomMinimumSize = new Vector2I(24, 0) }.WithFont(9, UITheme.TextDim)); var bg = new ColorRect { Color = new Color(0.15f, 0.12f, 0.18f), CustomMinimumSize = new Vector2I(70, 6) }; row.AddChild(bg); var fill = new ColorRect { Color = color, CustomMinimumSize = new Vector2I((int)(value * 0.7f), 6) }; row.AddChild(fill); row.AddChild(new Label { Text = value.ToString() }.WithFont(9, color)); parent.AddChild(row); }
 	static void StatLine(VBoxContainer parent, string label, int value, Color color) { var row = new HBoxContainer(); row.AddChild(new Label { Text = $"{label}:", CustomMinimumSize = new Vector2I(30, 0) }.WithFont(10, UITheme.TextDim)); var bar = new ColorRect { CustomMinimumSize = new Vector2I((int)(value * 0.8f), 6) }; bar.Color = color; row.AddChild(bar); row.AddChild(new Label { Text = value.ToString() }.WithFont(10, color)); parent.AddChild(row); }
 	static string BarsString(double current, double max, int segments) { double ratio = Math.Clamp(current / max, 0, 1); int filled = (int)(ratio * segments); return "[" + new string('█', filled) + new string('░', segments - filled) + "]"; }
 	static string RealmNameCN(CultivationRealm r) => r switch { CultivationRealm.Mortal => "凡人", CultivationRealm.QiRefining => "练气", CultivationRealm.Foundation => "筑基", CultivationRealm.CoreFormation => "金丹", CultivationRealm.NascentSoul => "元婴", CultivationRealm.SpiritTransformation => "化神", CultivationRealm.Tribulation => "渡劫", CultivationRealm.GreatAscension => "大乘", _ => "未知" };

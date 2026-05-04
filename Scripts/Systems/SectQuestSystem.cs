@@ -39,7 +39,7 @@ public class SectQuestSystem
             {
                 q.Completed = true;
                 GrantReward(q, gm);
-                EventBus.EmitNotification("宗门令达成", $"宗门任务「{q.Title}」已完成！\n奖励: {q.RewardText}");
+                EventBus.EmitNotification("门令达成", $"「{q.Title}」已完成！\n奖励: {q.RewardText}");
             }
         }
     }

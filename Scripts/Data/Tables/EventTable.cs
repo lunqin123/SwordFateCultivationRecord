@@ -160,6 +160,104 @@ public static class EventTable
             Choice2Outcome = new() { ResultText = "观摩的弟子们都有所领悟。", DiscipleCultivationBonus = 15 },
             Choice3Outcome = new() { ResultText = "顿悟自然结束，弟子略有收获。", DiscipleCultivationBonus = 10 },
         },
+        // ====== 外门 & 资源事件 ======
+        new()
+        {
+            Id = 30, Category = EventCategory.Opportunity, Weight = 12,
+            Title = "外门扩招",
+            Description = "附近村镇的凡人听说宗门待遇优厚，大批年轻人前来投奔，希望成为外门弟子。",
+            Choice1Text = "择优收录，扩充外门",
+            Choice2Text = "挑选少数精英",
+            Choice3Text = "暂时不收",
+            Choice1Outcome = new() { ResultText = "外门弟子数量大增，宗门基础产出提升！", ResourceChanges = { [ResourceType.SpiritStone] = -30 }, ReputationChange = 10, DiscipleStatEffects = new[] { 0, 5, 0 } },
+            Choice2Outcome = new() { ResultText = "收录了几名资质不错的弟子，其中一人或有内门之资。", DiscipleCultivationBonus = 5 },
+            Choice3Outcome = new() { ResultText = "求道者失望离去，宗门口碑受损。", ReputationChange = -5 },
+        },
+        new()
+        {
+            Id = 31, Category = EventCategory.Crisis, Weight = 10,
+            Title = "外门骚乱",
+            Description = "外门弟子因待遇不公产生不满，聚集请愿，要求改善修炼环境。若处理不当，可能引发大规模离去。",
+            Choice1Text = "拨款改善外门条件",
+            Choice2Text = "派出内门弟子安抚",
+            Choice3Text = "武力镇压",
+            Choice1Outcome = new() { ResultText = "外门弟子感激涕零，工作效率大升！", ResourceChanges = { [ResourceType.SpiritStone] = -100 }, DiscipleStatEffects = new[] { 0, 15, 0 } },
+            Choice2Outcome = new() { ResultText = "内门弟子的劝说起了作用，事态平息。", DiscipleStatEffects = new[] { 3, 0, 0 } },
+            Choice3Outcome = new() { ResultText = "外门弟子敢怒不敢言，大量人员悄然离去。", ReputationChange = -15, DiscipleStatEffects = new[] { -5, -20, 0 } },
+        },
+        new()
+        {
+            Id = 32, Category = EventCategory.Opportunity, Weight = 8,
+            Title = "坊市繁荣",
+            Description = "宗门周边的坊市日渐繁荣，不少散修在此交易，形成了一个小型修仙集市。",
+            Choice1Text = "参与经营，设点收税",
+            Choice2Text = "鼓励弟子在此交换物资",
+            Choice3Text = "保持距离，不涉商业",
+            Choice1Outcome = new() { ResultText = "坊市为宗门带来了稳定的灵石收入！", ResourceChanges = { [ResourceType.SpiritStone] = 120, [ResourceType.Herb] = 15, [ResourceType.Ore] = 10 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "弟子们获得了更多修炼资源，心情愉悦。", DiscipleStatEffects = new[] { 0, 10, 0 }, ResourceChanges = { [ResourceType.Pill] = 5 } },
+            Choice3Outcome = new() { ResultText = "坊市独立发展，宗门收获有限。" },
+        },
+        new()
+        {
+            Id = 33, Category = EventCategory.Internal, Weight = 10,
+            Title = "灵田丰收",
+            Description = "今年风调雨顺，灵气充沛，宗门的灵田迎来了前所未有的大丰收！",
+            Choice1Text = "扩大种植面积",
+            Choice2Text = "储存灵草以备后用",
+            Choice3Text = "将多余灵草对外出售",
+            Choice1Outcome = new() { ResultText = "大面积种植了高产灵草，来年产量有望倍增！", ResourceChanges = { [ResourceType.Herb] = 60 } },
+            Choice2Outcome = new() { ResultText = "灵草被妥善保存，足够宗门一年之用。", ResourceChanges = { [ResourceType.Herb] = 40 } },
+            Choice3Outcome = new() { ResultText = "出售灵草获得了不少灵石。", ResourceChanges = { [ResourceType.Herb] = 10, [ResourceType.SpiritStone] = 80 } },
+        },
+        new()
+        {
+            Id = 34, Category = EventCategory.Visitor, Weight = 10, MinSectLevel = 2,
+            Title = "炼器大师",
+            Description = "一位炼器大师慕名来到宗门，愿意传授独门炼器技巧，但需要提供材料供其实验。",
+            Choice1Text = "全力支持，供其所需",
+            Choice2Text = "限量供应材料",
+            Choice3Text = "请大师指导弟子即可",
+            Choice1Outcome = new() { ResultText = "大师感动于宗门诚意，留下了几件法器并传授了技艺！", ResourceChanges = { [ResourceType.Ore] = -30, [ResourceType.Equipment] = 8 }, DiscipleCultivationBonus = 5 },
+            Choice2Outcome = new() { ResultText = "大师完成了几件实验作品，留作酬谢。", ResourceChanges = { [ResourceType.Ore] = -15, [ResourceType.Equipment] = 3 } },
+            Choice3Outcome = new() { ResultText = "弟子们学到了基础炼器技巧，收获有限但也有用。", ResourceChanges = { [ResourceType.Equipment] = 1 } },
+        },
+        new()
+        {
+            Id = 35, Category = EventCategory.Crisis, Weight = 8, MinSectLevel = 2,
+            Title = "丹药失窃",
+            Description = "宗门库房中的一批丹药不翼而飞！经查，乃是一名弟子监守自盗。",
+            Choice1Text = "严惩不贷，杀一儆百",
+            Choice2Text = "从轻发落，给其改过的机会",
+            Choice3Text = "私下处理，低调解决",
+            Choice1Outcome = new() { ResultText = "严厉的惩罚震慑了其他人，但宗门气氛变得紧张。", DiscipleStatEffects = new[] { 5, -10, 0 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "犯错弟子痛哭流涕，发誓重新做人。但丹药已无法追回。", ResourceChanges = { [ResourceType.Pill] = -5 }, DiscipleStatEffects = new[] { 0, -5, 0 } },
+            Choice3Outcome = new() { ResultText = "事情被压了下来，但私下闲言碎语不断。", DiscipleStatEffects = new[] { -5, -5, 0 } },
+        },
+        new()
+        {
+            Id = 36, Category = EventCategory.Opportunity, Weight = 8, MinSectLevel = 3,
+            Title = "秘境入口",
+            Description = "宗门附近空间突然扭曲，一个上古秘境入口凭空出现！但这个秘境似乎只在每月的月圆之夜开放。",
+            Choice1Text = "组织精锐探索秘境",
+            Choice2Text = "先驻扎封锁，慢慢研究",
+            Choice3Text = "邀请友好宗门共同探索",
+            Choice1Outcome = new() { ResultText = "秘境中收获了大量上古遗宝和功法！但部分弟子受了轻伤。", ResourceChanges = { [ResourceType.SpiritStone] = 250, [ResourceType.Pill] = 12, [ResourceType.Equipment] = 6 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { 0, 5, -15 } },
+            Choice2Outcome = new() { ResultText = "逐步探索减少了风险，稳定获得了一批资源。", ResourceChanges = { [ResourceType.SpiritStone] = 150, [ResourceType.Pill] = 6 }, ReputationChange = 10 },
+            Choice3Outcome = new() { ResultText = "合作探索虽然分走了一些宝物，但加深了宗门友谊。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 8 }, ReputationChange = 20 },
+        },
+        new()
+        {
+            Id = 37, Category = EventCategory.Internal, Weight = 10,
+            Title = "散修投效",
+            Description = "几位在当地小有名气的散修前来宗门，表示愿意加入，但他们要求直接成为内门弟子。",
+            Choice1Text = "破格录取为内门弟子",
+            Choice2Text = "从外门做起，凭实力晋升",
+            Choice3Text = "婉言谢绝",
+            Choice1Outcome = new() { ResultText = "散修们加入后，宗门的实力有所提升。但部分老弟子心中不平。", DiscipleCultivationBonus = 10, DiscipleStatEffects = new[] { -5, 5, 0 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "散修们虽有不悦，但最终接受。其中一人展现出惊人天赋。", DiscipleStatEffects = new[] { 0, -3, 0 }, ReputationChange = 3 },
+            Choice3Outcome = new() { ResultText = "散修们摇头离去，转而加入了邻近宗门。", ReputationChange = -5 },
+        },
+
         // ====== Companion Events (道侣) ======
         new()
         {
@@ -220,6 +318,92 @@ public static class EventTable
             Choice1Outcome = new() { ResultText = "庆典吸引了四方散修观礼，宗门声望大涨，道侣感情升华！", ReputationChange = 20, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { 10, 20, 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -80 } },
             Choice2Outcome = new() { ResultText = "天赐灵气被二人全数吸收，修为大进。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new[] { 5, 10, 0 } },
             Choice3Outcome = new() { ResultText = "霞光自然消散，留下淡淡余韵，二人心有感悟。", DiscipleCultivationBonus = 10, ReputationChange = 5 },
+        },
+
+        // ====== 高阶事件 (Lv.3+) ======
+        new()
+        {
+            Id = 40, Category = EventCategory.Crisis, Weight = 8, MinSectLevel = 3,
+            Title = "灵脉枯竭",
+            Description = "宗门下方的灵脉出现了衰竭迹象，灵气浓度持续下降。若灵脉彻底枯竭，宗门根基将受重创！",
+            Choice1Text = "投入大量灵石滋养灵脉",
+            Choice2Text = "寻找新的灵脉来源",
+            Choice3Text = "节约使用，减缓消耗",
+            Choice1Outcome = new() { ResultText = "灵石投入后灵脉恢复了活力，甚至比以前更浓郁了！", ResourceChanges = { [ResourceType.SpiritStone] = -300, [ResourceType.SpiritEssence] = 40 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "探索队在百里外发现了一条新的小型灵脉，暂时缓解了危机。", ResourceChanges = { [ResourceType.SpiritEssence] = 20, [ResourceType.SpiritStone] = -80 } },
+            Choice3Outcome = new() { ResultText = "灵气浓度持续下降，宗门修炼效率大降。", DiscipleStatEffects = new[] { 0, -10, 0 }, DiscipleCultivationBonus = -10 },
+        },
+        new()
+        {
+            Id = 41, Category = EventCategory.Opportunity, Weight = 8, MinSectLevel = 3,
+            Title = "天劫余波",
+            Description = "远方有修士渡劫失败，但其渡劫产生的天地能量尚未散去。若能善加利用，对门下弟子的修炼将是极大的助力。",
+            Choice1Text = "派遣弟子前去感悟",
+            Choice2Text = "收集残余天雷之力",
+            Choice3Text = "不值得冒险",
+            Choice1Outcome = new() { ResultText = "弟子们在劫雷余韵中获得了珍贵的感悟，部分人修为大增！", DiscipleCultivationBonus = 30, DiscipleStatEffects = new[] { 0, 5, -10 } },
+            Choice2Outcome = new() { ResultText = "收集到的天雷之力被炼化成了淬体宝物。", ResourceChanges = { [ResourceType.Equipment] = 5, [ResourceType.Pill] = 8 } },
+            Choice3Outcome = new() { ResultText = "天劫余波自行消散。", ReputationChange = -3 },
+        },
+        new()
+        {
+            Id = 42, Category = EventCategory.Competition, Weight = 10, MinSectLevel = 2,
+            Title = "外门大比",
+            Description = "外门弟子们自发组织了一场比武大会，获胜者希望获得晋升内门的机会。",
+            Choice1Text = "正式承认大比，给予晋升名额",
+            Choice2Text = "允许举办但不承诺晋升",
+            Choice3Text = "外门弟子无需大比",
+            Choice1Outcome = new() { ResultText = "外门弟子斗志昂扬，优胜者晋升内门，宗门实力增长！", DiscipleStatEffects = new[] { 5, 15, 0 }, DiscipleCultivationBonus = 8, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "大比依然举办，但弟子们有些失望，士气略有影响。", DiscipleStatEffects = new[] { 0, -5, 0 } },
+            Choice3Outcome = new() { ResultText = "外门弟子大失所望，不少人萌生去意。", DiscipleStatEffects = new[] { -5, -15, 0 } },
+        },
+        new()
+        {
+            Id = 43, Category = EventCategory.Visitor, Weight = 8, MinSectLevel = 3,
+            Title = "仙人讲道",
+            Description = "一位路过的化神期大修士被宗门的修炼氛围打动，愿意停留三日为弟子们讲授大道至理。",
+            Choice1Text = "盛情接待，广邀听众",
+            Choice2Text = "低调安排内门弟子听讲",
+            Choice3Text = "询问仙人意图后再决定",
+            Choice1Outcome = new() { ResultText = "讲道三日，听者如云。弟子们收获巨大，宗门声望大涨！", DiscipleCultivationBonus = 35, ReputationChange = 20, ResourceChanges = { [ResourceType.Pill] = -10 } },
+            Choice2Outcome = new() { ResultText = "内门弟子受益匪浅，不少人有突破迹象。", DiscipleCultivationBonus = 25 },
+            Choice3Outcome = new() { ResultText = "仙人满意离去，留下几本修炼心得。", DiscipleCultivationBonus = 15, ResourceChanges = { [ResourceType.Pill] = 3 } },
+        },
+        new()
+        {
+            Id = 44, Category = EventCategory.Crisis, Weight = 10, MinSectLevel = 2,
+            Title = "瘟疫蔓延",
+            Description = "一种奇异的灵草瘟疫在药田中蔓延，染病的灵草迅速枯萎。若不及时控制，宗门灵草供给将受严重影响！",
+            Choice1Text = "用灵石购买特效药",
+            Choice2Text = "隔离病株，烧毁感染区",
+            Choice3Text = "尝试用丹药救治灵草",
+            Choice1Outcome = new() { ResultText = "特效药效果显著，灵草保住了大半。", ResourceChanges = { [ResourceType.SpiritStone] = -80, [ResourceType.Herb] = -10 } },
+            Choice2Outcome = new() { ResultText = "烧毁了近半灵田，但瘟疫被彻底控制。", ResourceChanges = { [ResourceType.Herb] = -30 } },
+            Choice3Outcome = new() { ResultText = "丹药效果有限，灵草损失严重，但获得了宝贵的防疫经验。", ResourceChanges = { [ResourceType.Herb] = -20, [ResourceType.Pill] = -5 } },
+        },
+        new()
+        {
+            Id = 45, Category = EventCategory.Opportunity, Weight = 10, MinSectLevel = 2,
+            Title = "古宝出土",
+            Description = "暴雨冲刷后，宗门后山露出一处古墓入口，隐约可见其中藏有古宝。但古墓中可能潜藏危险。",
+            Choice1Text = "率队深入古墓探查",
+            Choice2Text = "小心挖掘，逐步推进",
+            Choice3Text = "封存古墓，来日再探",
+            Choice1Outcome = new() { ResultText = "古墓中获得了数件古宝和大量丹药！但遭遇了机关陷阱，部分弟子受伤。", ResourceChanges = { [ResourceType.Equipment] = 10, [ResourceType.Pill] = 8, [ResourceType.SpiritStone] = 50 }, DiscipleStatEffects = new[] { 0, 5, -20 } },
+            Choice2Outcome = new() { ResultText = "安全获得了一批古宝，虽然数量少了些，但无人伤亡。", ResourceChanges = { [ResourceType.Equipment] = 5, [ResourceType.Pill] = 3 } },
+            Choice3Outcome = new() { ResultText = "古墓被封存，但消息已经传出，两个月后被他人捷足先登。", ReputationChange = -5 },
+        },
+        new()
+        {
+            Id = 46, Category = EventCategory.Opportunity, Weight = 6, MinSectLevel = 4,
+            Title = "天道感应",
+            Description = "天地异象骤然降临！宗门的道统似乎与天道产生了某种奇妙的共鸣。一股浩瀚的天地之力笼罩了整个宗门。",
+            Choice1Text = "引导天道之力灌注宗门根基",
+            Choice2Text = "引导天道之力融入弟子修炼",
+            Choice3Text = "尝试参悟天道玄机",
+            Choice1Outcome = new() { ResultText = "天道之力融入宗门根基，灵脉变得更加深厚，声望大振！", ResourceChanges = { [ResourceType.SpiritEssence] = 100, [ResourceType.SpiritStone] = 200 }, ReputationChange = 30, DiscipleStatEffects = new[] { 5, 10, 0 } },
+            Choice2Outcome = new() { ResultText = "天道之力涌入弟子体内，多人当场突破！", DiscipleCultivationBonus = 50, DiscipleStatEffects = new[] { 10, 20, 0 }, ReputationChange = 10 },
+            Choice3Outcome = new() { ResultText = "你从天道感应中领悟了一丝大道至理。", DiscipleCultivationBonus = 25, ReputationChange = 15 },
         },
     };
 

@@ -101,6 +101,7 @@ public class SaveLoadManager
             SectReputation = gm.SectReputation,
             SectPower = gm.SectPower,
             MaxDisciples = gm.MaxDisciples,
+            OuterDiscipleCount = gm.OuterDiscipleCount,
             Resources = gm.Resources.GetAllResources(),
             IncomePerDay = gm.Resources.GetAllIncome(),
             Disciples = gm.Disciples.AllDisciples.ToList(),
@@ -109,6 +110,7 @@ public class SaveLoadManager
             Companions = gm.Companions.AllCompanions.ToList(),
             Equipment = gm.AllEquipment.ToList(),
             EventLog = gm.EventLogEntries.ToList(),
+            PlotProgress = gm.Plot.ExportProgress(),
         };
         return data;
     }
@@ -121,6 +123,7 @@ public class SaveLoadManager
         gm.SectReputation = data.SectReputation;
         gm.SectPower = data.SectPower;
         gm.MaxDisciples = data.MaxDisciples;
+        gm.OuterDiscipleCount = data.OuterDiscipleCount;
         gm.Resources.LoadState(data.Resources, data.IncomePerDay);
         gm.Disciples.LoadState(data.Disciples);
         gm.Facilities.LoadState(data.Facilities);
@@ -130,6 +133,7 @@ public class SaveLoadManager
         if (data.Equipment != null) gm.AllEquipment.AddRange(data.Equipment);
         gm.EventLogEntries.Clear();
         if (data.EventLog != null) gm.EventLogEntries.AddRange(data.EventLog);
+        gm.Plot.LoadProgress(data.PlotProgress ?? new PlotProgress());
     }
 }
 

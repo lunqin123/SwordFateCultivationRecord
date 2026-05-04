@@ -13,6 +13,7 @@ public partial class GameManager : Node
 	public SaveLoadManager SaveLoad { get; private set; } = new();
 	public CompanionSystem Companions { get; private set; } = new();
 	public SectQuestSystem Quests { get; private set; } = new();
+	public PlotSystem Plot { get; private set; } = new();
 	public List<EquipmentData> AllEquipment { get; private set; } = new();
 
 	// Sect state
@@ -21,13 +22,21 @@ public partial class GameManager : Node
 	public int SectReputation { get; set; } = 0;
 	public int SectPower { get; set; } = 0;
 	public int MaxDisciples { get; set; } = 5;
+	public int OuterDiscipleCount { get; set; }
+	public int MaxOuterDisciples => SectLevel * 15 + 5 + Facilities.AllFacilities.Where(f => f.IsBuilt).Sum(f => f.ManagementBonus);
+	public int OuterDiscipleHerbRate => OuterDiscipleCount / 5;   // 每5外门弟子日产灵草1
+	public int OuterDiscipleOreRate => OuterDiscipleCount / 7;    // 每7外门弟子日产矿石1
+	public int OuterDiscipleCostPerDay => OuterDiscipleCount / 3; // 每3外门弟子日耗灵石1
+	public double OuterEfficiency => OuterDiscipleCount <= MaxOuterDisciples ? 1.0 : Math.Max(0.3, 1.0 - (OuterDiscipleCount - MaxOuterDisciples) * 0.05);
+	private double _herbAccum, _oreAccum;
 
 	public bool IsInitialized { get; private set; }
 	public EventData? PendingEvent { get; private set; }
 
-	// 入门大比
+	// 内门选拔
 	public int RecruitTournamentDays { get; private set; } = -1; // -1 = 未安排
 	public List<DiscipleData>? PendingRecruitCandidates { get; private set; }
+	public int TournamentPicksRemaining { get; private set; }
 
 	// 自动智能安排 — 需藏经阁 + Lv.2以上解锁
 	public bool AutoAssignEnabled { get; set; }
@@ -79,7 +88,9 @@ public partial class GameManager : Node
 		Events = new EventSystem();
 		Companions = new CompanionSystem();
 		Quests = new SectQuestSystem();
+		Plot = new PlotSystem();
 		Quests.Initialize();
+		Plot.Initialize();
 		AllEquipment = new List<EquipmentData>();
 		SectName = "无名剑宗";
 		SectLevel = 1;
@@ -94,7 +105,7 @@ public partial class GameManager : Node
 		// Starting equipment
 		AllEquipment.Add(new EquipmentData { Id = 1, Name = "铁剑", Quality = EquipmentQuality.Common, Description = "宗门传承的铁剑", CombatBonus = 5 });
 		AllEquipment.Add(new EquipmentData { Id = 2, Name = "静心蒲团", Quality = EquipmentQuality.Common, Description = "辅助修炼的蒲团", CultivationSpeedBonus = 0.05 });
-		for (int i = 0; i < 3; i++) Disciples.Recruit();
+		for (int i = 0; i < 1; i++) Disciples.Recruit();
 		LogEvent($"宗门「{SectName}」于第{Time.Year}年创立");
 		IsInitialized = true;
 	}
@@ -136,6 +147,7 @@ public partial class GameManager : Node
 		Facilities.ProcessDaily(Resources);
 		// 2. Resource income applied
 		Resources.ApplyDailyIncome();
+		ProcessOuterDisciples();
 		// 3. Companions: affection, mood, and dual cultivation bonuses
 		var compBonus = Companions.ProcessDaily(Disciples.AllDisciples.ToList(), Time.GetTotalDays());
 		Companions.TryRandomPairing(Disciples.AllDisciples.ToList());
@@ -153,7 +165,7 @@ public partial class GameManager : Node
 		// 5. Event cooldowns
 		Events.ProcessCooldowns();
 
-		// 6. 入门大比 countdown
+		// 6. 内门选拔倒计时
 		if (RecruitTournamentDays > 0)
 		{
 			RecruitTournamentDays--;
@@ -161,6 +173,7 @@ public partial class GameManager : Node
 			{
 				// Tournament ends — generate quality candidates based on reputation
 				PendingRecruitCandidates = GenerateRecruitCandidates(SectReputation);
+				TournamentPicksRemaining = TournamentPickCount;
 				EventBus.EmitRecruitSelectionReady(PendingRecruitCandidates);
 				return; // Pause daily cycle until player selects
 			}
@@ -171,6 +184,7 @@ public partial class GameManager : Node
 
 		Quests.CheckProgress(this);
 		Quests.RefreshCompleted(this);
+		Plot.CheckProgress(this);
 
 		// 9. Advance day
 		Time.AdvanceDay();
@@ -191,6 +205,32 @@ public partial class GameManager : Node
 		}
 	}
 
+	// ====== Outer Disciples ======
+
+	private double _outerGrowthAccum;
+	private void ProcessOuterDisciples()
+	{
+		double eff = OuterEfficiency;
+		// Production
+		_herbAccum += OuterDiscipleCount * 0.20 * eff;
+		_oreAccum += OuterDiscipleCount * 0.15 * eff;
+		int herbGain = (int)_herbAccum; if (herbGain > 0) { Resources.Add(ResourceType.Herb, herbGain); _herbAccum -= herbGain; }
+		int oreGain = (int)_oreAccum; if (oreGain > 0) { Resources.Add(ResourceType.Ore, oreGain); _oreAccum -= oreGain; }
+		// Maintenance cost
+		int cost = Math.Max(0, (int)Math.Ceiling(OuterDiscipleCount * 0.3 / eff));
+		if (cost > 0) Resources.Spend(ResourceType.SpiritStone, cost);
+		// Passive growth: reputation + GuestHall attract outer disciples
+		int guestBonus = Facilities.AllFacilities.Where(f => f.IsBuilt && f.Type == FacilityType.GuestHall).Sum(f => f.Level);
+		_outerGrowthAccum += SectReputation * 0.002 + guestBonus * 0.05;
+		if (_outerGrowthAccum >= 1) { int gain = (int)_outerGrowthAccum; OuterDiscipleCount += gain; _outerGrowthAccum -= gain; }
+		// Natural attrition if over capacity
+		if (OuterDiscipleCount > MaxOuterDisciples && MaxOuterDisciples > 0)
+		{
+			int overflow = OuterDiscipleCount - MaxOuterDisciples;
+			if (_rng.NextDouble() < overflow * 0.03) OuterDiscipleCount = Math.Max(MaxOuterDisciples, OuterDiscipleCount - 1);
+		}
+	}
+
 	// ====== Sect Level ======
 
 	private void CheckSectLevelUp()
@@ -207,7 +247,28 @@ public partial class GameManager : Node
 		}
 	}
 
-	// ====== 入门大比 ======
+	// ====== 内门选拔 ======
+
+	/// <summary>Max candidates in tournament (base 5, + GuestHall bonus).</summary>
+	public int TournamentCandidateCount
+	{
+		get
+		{
+			int guest = Facilities.AllFacilities.Where(f => f.IsBuilt && f.Type == FacilityType.GuestHall).Sum(f => f.Level);
+			int training = Facilities.AllFacilities.Where(f => f.IsBuilt && f.Type == FacilityType.TrainingGround).Sum(f => f.Level);
+			return 5 + guest * 2 + training;
+		}
+	}
+
+	/// <summary>Max picks from tournament (base 1, + sect level / facility bonus).</summary>
+	public int TournamentPickCount
+	{
+		get
+		{
+			int guest = Facilities.AllFacilities.Where(f => f.IsBuilt && f.Type == FacilityType.GuestHall).Sum(f => f.Level);
+			return 1 + SectLevel / 2 + guest / 2;
+		}
+	}
 
 	/// <summary>Start a 7-day entrance tournament. Candidates appear after countdown.</summary>
 	public void ScheduleRecruitTournament()
@@ -215,16 +276,18 @@ public partial class GameManager : Node
 		if (!IsInitialized) return;
 		if (Disciples.Count >= MaxDisciples)
 		{
-			EventBus.EmitNotification("启禀", $"弟子已满（上限{MaxDisciples}人）");
+			EventBus.EmitNotification("启禀", $"内门弟子已满（上限{MaxDisciples}人）");
 			return;
 		}
 		if (RecruitTournamentDays > 0)
 		{
-			EventBus.EmitNotification("启禀", $"入门大比正在进行中（剩余{RecruitTournamentDays}天）");
+			EventBus.EmitNotification("启禀", $"内门选拔正在进行中（剩余{RecruitTournamentDays}天）");
 			return;
 		}
 		RecruitTournamentDays = 7;
-		EventBus.EmitNotification("宗门谕令", "已发出入门大比公告，七日后举行选拔！");
+		int cand = TournamentCandidateCount;
+		int pick = TournamentPickCount;
+		EventBus.EmitNotification("宗门谕令", $"已发榜招募内门弟子，七日后选拔！\n预计{cand}人应试，可选{pick}人入门。");
 		AdvanceTime(1);
 	}
 
@@ -232,37 +295,69 @@ public partial class GameManager : Node
 	private List<DiscipleData> GenerateRecruitCandidates(int reputation)
 	{
 		var candidates = new List<DiscipleData>();
-		int count = reputation >= 1000 ? 7 : reputation >= 500 ? 6 : 5;
+		int count = TournamentCandidateCount;
+
+		// Fortune's Child: ~1% chance per tournament (scales with reputation)
+		bool hasFortuneChild = _rng.NextDouble() < 0.01 + SectReputation * 0.0001;
 
 		for (int i = 0; i < count; i++)
 		{
-			var d = Disciples.GenerateCandidate();
-
-			// Reputation-based quality boost
-			if (reputation >= 100)
+			DiscipleData d;
+			if (hasFortuneChild && i == 0)
 			{
-				// Boost one random stat
-				int boost = reputation >= 800 ? 15 : reputation >= 400 ? 10 : reputation >= 150 ? 5 : 3;
-				switch (_rng.Next(4))
-				{
-					case 0: d.Talent = Math.Min(100, d.Talent + boost); break;
-					case 1: d.Comprehension = Math.Min(100, d.Comprehension + boost); break;
-					case 2: d.Constitution = Math.Min(100, d.Constitution + boost); break;
-					case 3: d.Spirit = Math.Min(100, d.Spirit + boost); break;
-				}
+				d = GenerateFortuneChild();
+				hasFortuneChild = false; // Only one per tournament
 			}
-
-			// Higher reputation → better spiritual root odds
-			if (reputation >= 300 && d.SpiritRoot >= SpiritualRoot.ThreeElement)
+			else
 			{
-				// Reroll chance for better root
-				if (_rng.NextDouble() < (reputation >= 1000 ? 0.30 : reputation >= 600 ? 0.15 : 0.05))
-					d.SpiritRoot = RollBetterRoot(d.SpiritRoot);
+				d = Disciples.GenerateCandidate();
+
+				// Reputation-based quality boost
+				if (reputation >= 100)
+				{
+					int boost = reputation >= 800 ? 15 : reputation >= 400 ? 10 : reputation >= 150 ? 5 : 3;
+					switch (_rng.Next(4))
+					{
+						case 0: d.Talent = Math.Min(100, d.Talent + boost); break;
+						case 1: d.Comprehension = Math.Min(100, d.Comprehension + boost); break;
+						case 2: d.Constitution = Math.Min(100, d.Constitution + boost); break;
+						case 3: d.Spirit = Math.Min(100, d.Spirit + boost); break;
+					}
+				}
+
+				if (reputation >= 300 && d.SpiritRoot >= SpiritualRoot.ThreeElement)
+				{
+					if (_rng.NextDouble() < (reputation >= 1000 ? 0.30 : reputation >= 600 ? 0.15 : 0.05))
+						d.SpiritRoot = RollBetterRoot(d.SpiritRoot);
+				}
 			}
 
 			candidates.Add(d);
 		}
 		return candidates;
+	}
+
+	/// <summary>Generate a Fortune's Child — exceptionally talented disciple.</summary>
+	private DiscipleData GenerateFortuneChild()
+	{
+		bool isMale = _rng.Next(2) == 0;
+		var d = new DiscipleData
+		{
+			Name = DiscipleNameTable.GenerateName(isMale),
+			Age = _rng.Next(12, 19),
+			Talent = _rng.Next(80, 101),
+			Comprehension = _rng.Next(80, 101),
+			Constitution = _rng.Next(75, 101),
+			Spirit = _rng.Next(80, 101),
+			Realm = CultivationRealm.Mortal,
+			IsMale = isMale,
+			SpiritRoot = _rng.NextDouble() < 0.4 ? SpiritualRoot.Heavenly : SpiritualRoot.SingleElement,
+			Background = "天降异象",
+			Personality = "天命所归",
+			Trait = "气运之子",
+		};
+		LogEvent($"天降异象！一位气运之子{d.Name}出现在内门选拔中！");
+		return d;
 	}
 
 	private SpiritualRoot RollBetterRoot(SpiritualRoot current)
@@ -279,17 +374,28 @@ public partial class GameManager : Node
 
 	public void ConfirmRecruit(DiscipleData candidate)
 	{
-		if (!IsInitialized || candidate == null) return;
+		if (!IsInitialized || candidate == null || TournamentPicksRemaining <= 0) return;
 		Disciples.Admit(candidate);
-		LogEvent($"{candidate.Name}通过入门大比，正式加入宗门");
-		PendingRecruitCandidates = null;
-		EventBus.EmitNotification("宗门谕令", $"{candidate.Name}通过入门大比，正式加入宗门！");
-		AdvanceTime(1);
+		LogEvent($"{candidate.Name}通过内门选拔，正式加入宗门");
+		PendingRecruitCandidates!.Remove(candidate);
+		TournamentPicksRemaining--;
+		if (TournamentPicksRemaining <= 0 || Disciples.Count >= MaxDisciples)
+		{
+			PendingRecruitCandidates = null;
+			EventBus.EmitNotification("宗门谕令", $"{candidate.Name}通过内门选拔，正式加入宗门！选拔结束。");
+			AdvanceTime(1);
+		}
+		else
+		{
+			EventBus.EmitNotification("宗门谕令", $"{candidate.Name}通过内门选拔！尚余{TournamentPicksRemaining}个名额。");
+			EventBus.EmitRecruitSelectionReady(PendingRecruitCandidates);
+		}
 	}
 
 	public void CancelRecruit()
 	{
 		PendingRecruitCandidates = null;
+		TournamentPicksRemaining = 0;
 	}
 
 	/// <summary>Daily auto-assign: check each disciple and reassign unhealthy ones to rest.</summary>

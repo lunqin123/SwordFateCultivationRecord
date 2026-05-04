@@ -22,6 +22,8 @@ public static class EventBus
 
     // Recruit selection — candidates ready for UI to display
     public static event Action<List<DiscipleData>>? RecruitSelectionReady;
+    public static event Action<PlotStageDef, string>? PlotStageCompleted;
+    public static event Action<PlotStageDef>? PlotStageActivated;
     public static event Action<int, int, int>? DayPassed; // (day, month, year)
     public static event Action<int, int>? MonthPassed;     // (month, year)
     public static event Action<int>? YearPassed;           // (year)
@@ -38,6 +40,8 @@ public static class EventBus
     public static void EmitMonthPassed(int m, int y) => MonthPassed?.Invoke(m, y);
     public static void EmitYearPassed(int y) => YearPassed?.Invoke(y);
     public static void EmitRecruitSelectionReady(List<DiscipleData> candidates) => RecruitSelectionReady?.Invoke(candidates);
+    public static void EmitPlotStageCompleted(PlotStageDef stage, string message) => PlotStageCompleted?.Invoke(stage, message);
+    public static void EmitPlotStageActivated(PlotStageDef stage) => PlotStageActivated?.Invoke(stage);
 
     public static void Clear()
     {
@@ -53,5 +57,7 @@ public static class EventBus
         MonthPassed = null;
         YearPassed = null;
         RecruitSelectionReady = null;
+        PlotStageCompleted = null;
+        PlotStageActivated = null;
     }
 }

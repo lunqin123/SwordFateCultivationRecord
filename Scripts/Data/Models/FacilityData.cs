@@ -20,6 +20,13 @@ public class FacilityData
     public string ImagePath { get; set; } = ""; // 设施图片路径
     public Vector2I GridPosition { get; set; }
 
+    public int ManagementBonus => Type switch
+    {
+        FacilityType.GuestHall => Level * 10,
+        FacilityType.Library => Level * 3,
+        _ => 0,
+    };
+
     public string TypeName => Type switch
     {
         FacilityType.MeditationChamber => "静修室",

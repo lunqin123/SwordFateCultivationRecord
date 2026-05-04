@@ -18,6 +18,10 @@ public class SaveGameData
     public int SectReputation { get; set; }
     public int SectPower { get; set; }
     public int MaxDisciples { get; set; } = 5;
+    public int OuterDiscipleCount { get; set; }
+    public double HerbAccum { get; set; }
+    public double OreAccum { get; set; }
+    public double OuterGrowthAccum { get; set; }
 
     // State
     public Dictionary<ResourceType, int> Resources { get; set; } = new();
@@ -29,6 +33,7 @@ public class SaveGameData
     public List<CompanionData> Companions { get; set; } = new();
     public List<SectQuestData> Quests { get; set; } = new();
     public List<EquipmentData> Equipment { get; set; } = new();
+    public PlotProgress PlotProgress { get; set; } = new();
     public int RngSeed { get; set; }
 }
 
