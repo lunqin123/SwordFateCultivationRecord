@@ -28,3 +28,12 @@ package-lock.json
 
 # User data
 user/
+
+# DeepSeek Dashboard — API Key 配置 + 构建产物
+.deepseek_config.json
+DeepSeek.spec
+__pycache__/
+build/
+dist/
+*.exe
+*.bat
