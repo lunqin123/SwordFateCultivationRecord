@@ -57,6 +57,7 @@ public partial class MainUI : Control
 	private ColorRect _dayFlash = null!;
 	private Window _realmPopup = null!;
 	private Window _plotPopup = null!;
+	private Button _realmBtn = null!;
 
 	// Smart/Batch assign
 	private Window _smartPopup = null!;
@@ -199,9 +200,10 @@ public partial class MainUI : Control
 		var recruitBtn = Btn("入门大比"); recruitBtn.CustomMinimumSize = new Vector2I(110, 38);
 		recruitBtn.Pressed += () => { UIAnimator.ButtonPress(recruitBtn); _tournamentConfirmPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_tournamentConfirmPopup.GetChild(0)); };
 		bottomHBox.AddChild(recruitBtn); bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
-		var realmBtn = Btn("秘境探索"); realmBtn.CustomMinimumSize = new Vector2I(110, 38);
-		realmBtn.Pressed += () => { UIAnimator.ButtonPress(realmBtn); StartRealmExploration(); };
-		bottomHBox.AddChild(realmBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+		_realmBtn = Btn("秘境探索"); _realmBtn.CustomMinimumSize = new Vector2I(110, 38);
+		_realmBtn.Visible = false;
+		_realmBtn.Pressed += () => { UIAnimator.ButtonPress(_realmBtn); StartRealmExploration(); };
+		bottomHBox.AddChild(_realmBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 		_bgmIndicator = new Button { Text = "♪", Alignment = HorizontalAlignment.Center };
 		_bgmIndicator.AddThemeFontSizeOverride("font_size", 10); _bgmIndicator.AddThemeColorOverride("font_color", new Color(0.4f, 0.6f, 0.4f));
 		_bgmIndicator.AddThemeColorOverride("font_hover_color", new Color(0.6f, 0.9f, 0.6f));
@@ -533,7 +535,7 @@ public partial class MainUI : Control
 
 	void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshTournament(); RefreshTabContent(_activeTab); RefreshBgmIndicator(); RefreshButtons(); }
 	void RefreshTime() => _timeLabel.Text = GM.Time.GetDateString();
-	void RefreshSectInfo() => _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}";
+	void RefreshSectInfo() { _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}  内门{GM.Disciples.Count}/{GM.MaxDisciples}  外门{GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}"; _realmBtn.Visible = GM.SectLevel >= 3; }
 	void RefreshButtons() { _nextDayBtn.Disabled = GM.PendingEvent != null || GM.PendingRecruitCandidates != null; }
 	void RefreshTournament()
 	{
@@ -1441,11 +1443,12 @@ public partial class MainUI : Control
 		// Danger + treasure indicators
 		var statRow = new HBoxContainer();
 		var sc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; statRow.AddChild(sc);
-		sc.AddChild(new Label { Text = "⚔ 战力" + GM.SectPower }.WithFont(12, UITheme.TextOrange));
-		sc.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
-		sc.AddChild(new Label { Text = "💎 收获" + realm.TreasureScore }.WithFont(12, UITheme.Gold));
-		sc.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
-		sc.AddChild(new Label { Text = "❤ 损伤" + realm.DamageTaken }.WithFont(12, UITheme.Crimson));
+		var statInner = new HBoxContainer(); sc.AddChild(statInner);
+		statInner.AddChild(new Label { Text = "⚔ 战力" + GM.SectPower }.WithFont(12, UITheme.TextOrange));
+		statInner.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
+		statInner.AddChild(new Label { Text = "💎 收获" + realm.TreasureScore }.WithFont(12, UITheme.Gold));
+		statInner.AddChild(new Control { CustomMinimumSize = new Vector2I(20, 0) });
+		statInner.AddChild(new Label { Text = "❤ 损伤" + realm.DamageTaken }.WithFont(12, UITheme.Crimson));
 		root.AddChild(statRow); root.AddChild(SP(10));
 
 		var room = realm.Rooms[realm.CurrentRoom];
