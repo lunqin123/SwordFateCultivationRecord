@@ -73,7 +73,7 @@ public partial class MainUI : Control
 		OffsetLeft = 0; OffsetTop = 0; OffsetRight = 0; OffsetBottom = 0;
 		BuildUI(); ConnectSignals();
 		UITheme.ApplyTo(this);
-		if (GM.IsInitialized) { RefreshAll(); if (GM.Plot.ActiveStage != null) SwitchToTab(8); }
+		if (GM.IsInitialized) { RefreshAll(); if (GM.Plot.ActiveStage != null) ShowPlotIntro(GM.Plot.ActiveStage); }
 	}
 
 	public override void _ExitTree()
@@ -1414,7 +1414,50 @@ public partial class MainUI : Control
 		for (int i = 0; i < AudioManager.BgmNames.Count; i++) { int idx = i; var isCur = i == AudioManager.CurrentBgmIndex; var btn = new Button { Text = isCur ? $"▶ {AudioManager.BgmNames[i]}" : AudioManager.BgmNames[i], Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(0, 30) }; btn.AddThemeFontSizeOverride("font_size", 12); btn.AddThemeColorOverride("font_color", isCur ? UITheme.TextGreen : UITheme.TextPrimary); btn.AddThemeColorOverride("font_hover_color", UITheme.Gold); var sn = new StyleBoxFlat { BgColor = isCur ? new Color(0.10f, 0.18f, 0.10f) : new Color(0.13f, 0.10f, 0.18f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 }; var sh = new StyleBoxFlat { BgColor = new Color(0.22f, 0.18f, 0.32f), CornerRadiusBottomLeft = 4, CornerRadiusBottomRight = 4, CornerRadiusTopLeft = 4, CornerRadiusTopRight = 4 }; btn.AddThemeStyleboxOverride("normal", sn); btn.AddThemeStyleboxOverride("hover", sh); btn.Pressed += () => { AudioManager.SetBgm(idx); _bgmSelectPopup.Hide(); RefreshBgmIndicator(); }; vbox.AddChild(btn); vbox.AddChild(new Control { CustomMinimumSize = new Vector2I(0, 2) }); }
 	}
 
-		// ===================== PLOT POPUP =====================
+		// ===================== PLOT INTRO POPUP =====================
+
+	void ShowPlotIntro(PlotStageDef stage)
+	{
+		var root = (VBoxContainer)_plotPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(16));
+		root.AddChild(HL(stage.ChapterTitle, 16, UITheme.TextOrange));
+		root.AddChild(SP(8));
+		root.AddChild(HL(stage.Title, 26, UITheme.Gold));
+		root.AddChild(SP(20));
+
+		var narrLabel = new RichTextLabel { BbcodeEnabled = true, FitContent = true, SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		narrLabel.AddThemeFontSizeOverride("normal_font_size", 15);
+		narrLabel.AddThemeColorOverride("default_color", UITheme.TextPrimary);
+		string narrText = stage.Narrative.Replace("\n", "\n\n");
+		narrLabel.Text = narrText;
+		narrLabel.VisibleCharacters = 0;
+		root.AddChild(narrLabel);
+		root.AddChild(SP(24));
+
+		// Placeholder for the acknowledge button (shows after text finishes)
+		var btnContainer = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		root.AddChild(btnContainer);
+
+		// Typewriter: characters appear paragraph by paragraph feel
+		int total = narrLabel.GetTotalCharacterCount();
+		var t = narrLabel.CreateTween();
+		t.TweenProperty(narrLabel, "visible_characters", total, Math.Max(2.0, total * 0.022)).SetEase(Tween.EaseType.Out);
+		t.Finished += () =>
+		{
+			var ackBtn = new Button { Text = "踏上仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(220, 50) };
+			ackBtn.AddThemeFontSizeOverride("font_size", 20); ackBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			ackBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+			ackBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); ackBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			ackBtn.Pressed += () => { _plotPopup.Hide(); AudioManager.PlayClick(); GM.Plot.AcknowledgeStage(GM); };
+			btnContainer.AddChild(ackBtn);
+		};
+
+		_plotPopup.PopupCentered();
+		UIAnimator.WindowOpen((Control)_plotPopup.GetChild(0));
+	}
+
+	// ===================== PLOT POPUP =====================
 
 	void BuildPlotPopup()
 	{
