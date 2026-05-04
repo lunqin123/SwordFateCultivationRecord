@@ -55,6 +55,9 @@ public class PlotSystem
 
         EventBus.EmitPlotStageCompleted(stage, message);
 
+        if (stage.Id >= PlotTable.AllStages.Max(s => s.Id))
+            EventBus.EmitGameEnding();
+
         TryActivateNextStage();
     }
 

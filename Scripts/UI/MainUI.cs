@@ -57,6 +57,8 @@ public partial class MainUI : Control
 	private ColorRect _dayFlash = null!;
 	private Window _realmPopup = null!;
 	private Window _plotPopup = null!;
+	private Window _endingPopup = null!;
+	private bool _endingShown;
 	private Button _realmBtn = null!;
 
 	// Smart/Batch assign
@@ -87,6 +89,7 @@ public partial class MainUI : Control
 		EventBus.RecruitSelectionReady -= ShowRecruitSelection;
 		EventBus.PlotStageCompleted -= OnPlotStageCompleted;
 		EventBus.PlotStageActivated -= OnPlotStageActivated;
+		EventBus.GameEnding -= ShowEnding;
 	}
 
 	// ===================== BUILD =====================
@@ -219,6 +222,7 @@ public partial class MainUI : Control
 		BuildFacilityDetailPopup();
 		BuildPlotPopup();
 		BuildRealmPopup();
+		BuildEndingPopup();
 
 		for (int i = 0; i < 9; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
 		SwitchToTab(0);
@@ -498,6 +502,7 @@ public partial class MainUI : Control
 		EventBus.RecruitSelectionReady += ShowRecruitSelection;
 		EventBus.PlotStageCompleted += OnPlotStageCompleted;
 		EventBus.PlotStageActivated += OnPlotStageActivated;
+		EventBus.GameEnding += ShowEnding;
 	}
 	void OnDayPassed(int _, int __, int ___)
 	{
@@ -1381,6 +1386,7 @@ public partial class MainUI : Control
 		if (_bgmSelectPopup.Visible) { _bgmSelectPopup.Hide(); return; }
 		if (_realmPopup.Visible) { _realmPopup.Hide(); return; }
 		if (_plotPopup.Visible) { _plotPopup.Hide(); return; }
+		if (_endingPopup.Visible) { _endingPopup.Hide(); return; }
 		if (_gameOverPopup.Visible) return;
 		_settingsPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_settingsPopup.GetChild(0));
 	}
@@ -1532,6 +1538,62 @@ public partial class MainUI : Control
 		var rv = new VBoxContainer(); rv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 		_realmPopup.AddChild(rv);
 		AddChild(_realmPopup);
+	}
+
+	void BuildEndingPopup()
+	{
+		_endingPopup = new Window { Title = "剑缘终章", Size = new Vector2I(720, 600), Visible = false, Exclusive = true };
+		_endingPopup.CloseRequested += () => _endingPopup.Hide();
+		var ev = new VBoxContainer(); ev.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_endingPopup.AddChild(ev);
+		AddChild(_endingPopup);
+	}
+
+	void ShowEnding()
+	{
+		if (_endingShown) return; _endingShown = true;
+		var root = (VBoxContainer)_endingPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(20));
+		root.AddChild(HL("—— 剑缘修仙录 ——", 28, UITheme.Gold));
+		root.AddChild(SP(10));
+		root.AddChild(HL("全篇终", 20, new Color(1, 0.7f, 0.3f)));
+		root.AddChild(SP(20));
+
+		// Stats summary
+		root.AddChild(HL("宗门总结", 18, UITheme.Gold)); root.AddChild(SP(8));
+		root.AddChild(new Label { Text = $"宗门: {GM.FullSectName}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(15, UITheme.Gold));
+		root.AddChild(new Label { Text = $"最终称号: {GM.SectTitle}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, new Color(1, 0.7f, 0.3f)));
+		root.AddChild(new Label { Text = $"声望: {GM.SectReputation}  战力: {GM.SectPower}  宗门Lv.{GM.SectLevel}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+		root.AddChild(new Label { Text = $"内门弟子: {GM.Disciples.Count}人  外门弟子: {GM.OuterDiscipleCount}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+		root.AddChild(new Label { Text = $"灵筑: {GM.Facilities.AllFacilities.Count(f => f.IsBuilt)}座  道侣: {GM.Companions.AllCompanions.Count(c => c.IsMarried)}对", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+		root.AddChild(new Label { Text = $"法器库存: {GM.AllEquipment.Count}件  灵石: {GM.Resources.Get(ResourceType.SpiritStone)}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
+		root.AddChild(new Label { Text = $"历经: 第{GM.Time.Year}年{GM.Time.Month}月  共{GM.Time.GetTotalDays()}日", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextDim));
+		root.AddChild(new Label { Text = $"成就解锁: {GM.Achievements.Progress.TotalUnlocked}/{GM.Achievements.TotalCount}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextGreen));
+
+		// Realm stats
+		root.AddChild(SP(20));
+		root.AddChild(HL("剑尊遗言", 16, UITheme.Gold)); root.AddChild(SP(8));
+		root.AddChild(new Label { Text = "「吾乃云霄剑尊，三千年前渡劫失败……\n今见你所创之宗门，剑道昌盛，弟子如云，\n吾心甚慰。剑道不绝，传承永续。」", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, new Color(0.7f, 0.8f, 1.0f)));
+
+		root.AddChild(SP(24));
+		var btnRow = new HBoxContainer(); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; btnRow.AddChild(bc);
+		var inner = new HBoxContainer(); bc.AddChild(inner);
+		var contBtn = new Button { Text = "继续仙途", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(160, 44) };
+		contBtn.AddThemeFontSizeOverride("font_size", 16); contBtn.AddThemeColorOverride("font_color", UITheme.Gold); contBtn.AddThemeColorOverride("font_hover_color", new Color(1,1,1));
+		contBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); contBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		contBtn.Pressed += () => _endingPopup.Hide();
+		inner.AddChild(contBtn);
+		inner.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
+		var menuBtn = new Button { Text = "返回主菜单", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(160, 44) };
+		menuBtn.AddThemeFontSizeOverride("font_size", 16); menuBtn.AddThemeColorOverride("font_color", UITheme.TextDim); menuBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+		menuBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); menuBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		menuBtn.Pressed += () => { _endingPopup.Hide(); GetTree().ChangeSceneToFile("res://Scenes/StartMenu.tscn"); };
+		inner.AddChild(menuBtn);
+		root.AddChild(btnRow); root.AddChild(SP(20));
+
+		_endingPopup.PopupCentered();
+		UIAnimator.WindowOpen((Control)_endingPopup.GetChild(0));
 	}
 
 	void StartRealmExploration()

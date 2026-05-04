@@ -24,6 +24,7 @@ public static class EventBus
     public static event Action<List<DiscipleData>>? RecruitSelectionReady;
     public static event Action<PlotStageDef, string>? PlotStageCompleted;
     public static event Action<PlotStageDef>? PlotStageActivated;
+    public static event Action? GameEnding;
     public static event Action<int, int, int>? DayPassed; // (day, month, year)
     public static event Action<int, int>? MonthPassed;     // (month, year)
     public static event Action<int>? YearPassed;           // (year)
@@ -42,6 +43,7 @@ public static class EventBus
     public static void EmitRecruitSelectionReady(List<DiscipleData> candidates) => RecruitSelectionReady?.Invoke(candidates);
     public static void EmitPlotStageCompleted(PlotStageDef stage, string message) => PlotStageCompleted?.Invoke(stage, message);
     public static void EmitPlotStageActivated(PlotStageDef stage) => PlotStageActivated?.Invoke(stage);
+    public static void EmitGameEnding() => GameEnding?.Invoke();
 
     public static void Clear()
     {
@@ -59,5 +61,6 @@ public static class EventBus
         RecruitSelectionReady = null;
         PlotStageCompleted = null;
         PlotStageActivated = null;
+        GameEnding = null;
     }
 }
