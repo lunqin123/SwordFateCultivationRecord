@@ -25,5 +25,6 @@ public class AchievementDef
 public class AchievementProgress
 {
     public List<int> UnlockedIds { get; set; } = new();
+    public int ExploreCount { get; set; }
     public int TotalUnlocked => UnlockedIds.Count;
 }

@@ -4,7 +4,7 @@ public class DiscipleSystem
 {
     private readonly List<DiscipleData> _disciples = new();
     private int _nextId = 1;
-    private readonly Random _rng = new();
+    private Random _rng => Random.Shared;
 
     public IReadOnlyList<DiscipleData> AllDisciples => _disciples;
     public int Count => _disciples.Count;
@@ -495,6 +495,7 @@ public class DiscipleSystem
         if (!resources.Spend(ResourceType.SpiritStone, info.BreakthroughCost))
         {
             d.IsInBreakthrough = false;
+            d.CultivationProgress *= 0.5;
             d.Mood = Math.Max(0, d.Mood - 10);
             return;
         }

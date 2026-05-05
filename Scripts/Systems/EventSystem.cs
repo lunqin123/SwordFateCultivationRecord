@@ -2,7 +2,7 @@ namespace SwordFateCultivationRecord;
 
 public class EventSystem
 {
-    private readonly Random _rng = new();
+    private Random _rng => Random.Shared;
     private readonly Dictionary<int, int> _cooldowns = new(); // eventId -> remaining days
 
     public const double DailyEventChance = 0.15; // 15%

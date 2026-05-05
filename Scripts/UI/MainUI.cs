@@ -11,6 +11,7 @@ public partial class MainUI : Control
 	private Label _timeLabel = null!, _sectLabel = null!;
 	private readonly Dictionary<ResourceType, Label> _resourceLabels = new();
 	private readonly Dictionary<ResourceType, HBoxContainer> _resourceAnchors = new(); // for float animations
+	private Control _floatOverlay = null!; // overlay for floating resource gain labels
 
 	// Bottom bar
 	private Button _nextDayBtn = null!;
@@ -75,7 +76,7 @@ public partial class MainUI : Control
 		OffsetLeft = 0; OffsetTop = 0; OffsetRight = 0; OffsetBottom = 0;
 		BuildUI(); ConnectSignals();
 		UITheme.ApplyTo(this);
-		if (GM.IsInitialized) { RefreshAll(); if (GM.Plot.ActiveStage != null) ShowPlotIntro(GM.Plot.ActiveStage); }
+		if (GM.IsInitialized) { RefreshAll(); if (GM.Plot.ActiveStage != null) { SwitchToTab(8); RefreshPlot(); } }
 	}
 
 	public override void _ExitTree()
@@ -225,14 +226,25 @@ public partial class MainUI : Control
 		BuildEndingPopup();
 
 		for (int i = 0; i < 9; i++) _tabContents[i] = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-		SwitchToTab(0);
+		SwitchToTab(GM.Plot?.ActiveStage != null ? 8 : 0);
 
 		_dayFlash = new ColorRect { Color = new Color(1, 1, 1, 0), MouseFilter = MouseFilterEnum.Ignore };
 		_dayFlash.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 		AddChild(_dayFlash);
+		_floatOverlay = new Control { MouseFilter = MouseFilterEnum.Ignore };
+		_floatOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		AddChild(_floatOverlay);
 	}
 
-// ===================== HELPERS =====================
+	void UpdatePlotIndicator()
+	{
+		bool hasPlot = GM.Plot?.ActiveStage != null;
+		_sidebarBtns[8].Text = hasPlot ? "  ● 剧情" : "  剧情";
+		if (hasPlot)
+			_sidebarBtns[8].AddThemeColorOverride("font_color", new Color(0.91f, 0.72f, 0.29f));
+	}
+
+	// ===================== HELPERS =====================
 
 	static Control SP(int h) => new Control { CustomMinimumSize = new Vector2I(0, h) };
 	static Label HL(string t, int fs, Color c) { var lb = new Label { Text = t, HorizontalAlignment = HorizontalAlignment.Center }; if (UITheme.TitleFont != null) lb.AddThemeFontOverride("font", UITheme.TitleFont); lb.AddThemeFontSizeOverride("font_size", fs); lb.AddThemeColorOverride("font_color", c); return lb; }

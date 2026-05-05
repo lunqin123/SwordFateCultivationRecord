@@ -235,7 +235,7 @@ public static class EventTable
         },
         new()
         {
-            Id = 36, Category = EventCategory.Opportunity, Weight = 8, MinSectLevel = 3,
+            Id = 36, Category = EventCategory.Opportunity, Weight = 12, MinSectLevel = 3,
             Title = "秘境入口",
             Description = "宗门附近空间突然扭曲，一个上古秘境入口凭空出现！但这个秘境似乎只在每月的月圆之夜开放。",
             Choice1Text = "组织精锐探索秘境",
@@ -516,18 +516,6 @@ public static class EventTable
             Choice3Outcome = new() { ResultText = "避免了无谓伤亡，宗门稳定发展。但仙器落入他手未来可能成为威胁。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -10, HealthChange = 0 }, ReputationChange = -5 },
         },
 
-        new()
-        {
-            Id = 59, Category = EventCategory.Opportunity, Weight = 10, MinSectLevel = 3,
-            Title = "秘境现世",
-            Description = "宗门探索队在附近山脉中发现了一处隐藏的秘境入口！秘境中可能藏有上古宝物和修炼机缘，但也潜藏着未知的危险。是否组织弟子前去探索？",
-            Choice1Text = "组织精锐弟子探索秘境",
-            Choice2Text = "先做充分准备再探索",
-            Choice3Text = "当作无事发生",
-            Choice1Outcome = new() { ResultText = "弟子们踏入秘境，收获了一大批上古宝物！", ResourceChanges = { [ResourceType.SpiritStone] = 200, [ResourceType.Pill] = 8, [ResourceType.Equipment] = 5 }, DiscipleCultivationBonus = 10, ReputationChange = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = -10 } },
-            Choice2Outcome = new() { ResultText = "准备充分后再次探索，安全收获了一批资源。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 4 }, ReputationChange = 5 },
-            Choice3Outcome = new() { ResultText = "秘境入口自行闭合，不知何时才能再次开启。", ReputationChange = -3 },
-        },
     };
 
     public static IReadOnlyList<EventData> GetAllEvents() => _events;

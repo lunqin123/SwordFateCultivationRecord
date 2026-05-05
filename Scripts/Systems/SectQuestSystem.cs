@@ -5,7 +5,7 @@ public class SectQuestSystem
     public const int MaxQuests = 3;
     private readonly List<SectQuestData> _quests = new();
     private int _nextId = 1;
-    private readonly Random _rng = new();
+    private Random _rng => Random.Shared;
 
     public IReadOnlyList<SectQuestData> AllQuests => _quests;
 

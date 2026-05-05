@@ -7,6 +7,8 @@ public static class AudioManager
     private static AudioStreamPlayer? _bgmPlayer;
     private static Node? _root;
     private static bool _inited;
+    private static readonly List<AudioStreamPlayer> _sfxPool = new();
+    private const int MaxSfxPlayers = 4;
 
     public static IReadOnlyList<string> BgmNames { get; private set; } = Array.Empty<string>();
     public static int CurrentBgmIndex => GameSettings.BgmIndex;
@@ -195,6 +197,8 @@ public static class AudioManager
         _bgmPlayer?.Stop();
         _bgmPlayer?.QueueFree();
         _bgmPlayer = null;
+        foreach (var p in _sfxPool) p.QueueFree();
+        _sfxPool.Clear();
         _inited = false;
         _root = null;
     }
@@ -203,9 +207,27 @@ public static class AudioManager
     {
         if (_root == null || !_sounds.TryGetValue(name, out var stream)) return;
         float vol = Mathf.LinearToDb(GameSettings.MasterVolume * GameSettings.SfxVolume);
-        var player = new AudioStreamPlayer { Stream = stream, VolumeDb = vol };
-        _root.AddChild(player);
-        player.Finished += () => player.QueueFree();
+        // Try to get an idle player from pool
+        var player = _sfxPool.FirstOrDefault(p => !p.Playing);
+        if (player == null)
+        {
+            if (_sfxPool.Count >= MaxSfxPlayers)
+            {
+                // Force-reuse the oldest player (no new node)
+                player = _sfxPool[0];
+                _sfxPool.RemoveAt(0);
+                player.Stop();
+            }
+            else
+            {
+                player = new AudioStreamPlayer();
+                _root.AddChild(player);
+                _sfxPool.Add(player);
+                player.Finished += () => { };
+            }
+        }
+        player.Stream = stream;
+        player.VolumeDb = vol;
         player.CallDeferred(AudioStreamPlayer.MethodName.Play);
     }
 }

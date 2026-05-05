@@ -19,6 +19,7 @@ config/icon="res://icon.png"
 [autoload]
 
 GameManager="*res://Scenes/GameManager.tscn"
+MCPRuntime="*res://addons/godot_mcp/runtime/mcp_runtime.gd"
 
 [dotnet]
 
@@ -27,3 +28,7 @@ project/assembly_name="SwordFateCultivationRecord"
 [editor]
 
 editor/export/convert_text_resources_to_binary=false
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")

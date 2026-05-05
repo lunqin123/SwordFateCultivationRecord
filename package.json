@@ -12,6 +12,18 @@
   "type": "commonjs",
   "dependencies": {
     "@fontsource/ma-shan-zheng": "^5.2.9",
+    "godot-mcp-server": "^0.5.0",
     "jsfxr": "^1.4.0"
-  }
+  },
+  "directories": {
+    "doc": "docs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lunqin123/SwordFateCultivationRecord.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lunqin123/SwordFateCultivationRecord/issues"
+  },
+  "homepage": "https://github.com/lunqin123/SwordFateCultivationRecord#readme"
 }

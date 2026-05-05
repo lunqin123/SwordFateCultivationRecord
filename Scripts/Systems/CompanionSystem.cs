@@ -4,7 +4,7 @@ public class CompanionSystem
 {
     private readonly List<CompanionData> _companions = new();
     private int _nextId = 1;
-    private readonly Random _rng = new();
+    private Random _rng => Random.Shared;
 
     public IReadOnlyList<CompanionData> AllCompanions => _companions;
 
@@ -163,10 +163,10 @@ public class CompanionSystem
             Name = DiscipleNameTable.GenerateName(childIsMale),
             Age = 0,
             IsMale = childIsMale,
-            Talent = ClampStat((father.Talent + mother.Talent) / 2 + _rng.Next(-10, 11)),
-            Comprehension = ClampStat((father.Comprehension + mother.Comprehension) / 2 + _rng.Next(-10, 11)),
-            Constitution = ClampStat((father.Constitution + mother.Constitution) / 2 + _rng.Next(-10, 11)),
-            Spirit = ClampStat((father.Spirit + mother.Spirit) / 2 + _rng.Next(-10, 11)),
+            Talent = ClampStat((int)Math.Round((father.Talent + mother.Talent) / 2.0) + _rng.Next(-10, 11)),
+            Comprehension = ClampStat((int)Math.Round((father.Comprehension + mother.Comprehension) / 2.0) + _rng.Next(-10, 11)),
+            Constitution = ClampStat((int)Math.Round((father.Constitution + mother.Constitution) / 2.0) + _rng.Next(-10, 11)),
+            Spirit = ClampStat((int)Math.Round((father.Spirit + mother.Spirit) / 2.0) + _rng.Next(-10, 11)),
             Realm = CultivationRealm.Mortal,
             Loyalty = 80, // children are naturally loyal
             Mood = 80,
@@ -176,20 +176,9 @@ public class CompanionSystem
             MaxHealth = 100,
             // Inherit a skill boost: "道脉传承" skill ID 10
             Skills = new Dictionary<int, int> { { 10, 1 } },
-            SpiritRoot = RollChildSpiritRoot(),
+            SpiritRoot = GameManager.Instance.Disciples.RollSpiritRoot(true),
         };
         return child;
-    }
-
-    SpiritualRoot RollChildSpiritRoot()
-    {
-        double roll = _rng.NextDouble();
-        if (roll < 0.02) return SpiritualRoot.Heavenly;
-        if (roll < 0.08) return SpiritualRoot.SingleElement;
-        if (roll < 0.20) return SpiritualRoot.DualElement;
-        if (roll < 0.50) return SpiritualRoot.ThreeElement;
-        if (roll < 0.52) return SpiritualRoot.Special;
-        return SpiritualRoot.None;
     }
 
     static int ClampStat(int v) => Math.Clamp(v, 5, 100);

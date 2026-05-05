@@ -2,7 +2,7 @@ namespace SwordFateCultivationRecord;
 
 public class SecretRealmSystem
 {
-    private readonly Random _rng = new();
+    private Random _rng => Random.Shared;
     private static readonly string[] RealmNames = { "云霄洞天", "幽冥秘境", "上古战场", "太虚幻境", "星辰遗迹", "龙脉深渊", "剑冢秘境", "丹霞仙府" };
 
     public SecretRealmState CurrentRealm { get; private set; } = new();

@@ -192,16 +192,16 @@ public partial class MainUI : Control
 		int output = FacilityTable.GetOutput(f.Type, f.Level);
 		string outputName = ResName(info.OutputType);
 		root.AddChild(new Label { Text = $"每日产出: {outputName} +{output}", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextPrimary));
-		double taskBonus = FacilityTable.GetTaskBonus(f.Type, f.Level, DiscipleTaskType.Cultivate);
-		if (taskBonus == 0)
+		DiscipleTaskType? bonusTask = null;
 		{
-			// Check other task synergies
+			// Check all task types for synergy
 			foreach (DiscipleTaskType tt in Enum.GetValues<DiscipleTaskType>())
 			{
 				double tb = FacilityTable.GetTaskBonus(f.Type, f.Level, tt);
-				if (tb > 0) { taskBonus = tb; break; }
+				if (tb > 0) { bonusTask = tt; break; }
 			}
 		}
+		double taskBonus = bonusTask != null ? FacilityTable.GetTaskBonus(f.Type, f.Level, bonusTask.Value) : 0;
 		if (taskBonus > 0)
 			root.AddChild(new Label { Text = $"任务加成: +{taskBonus * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextGreen));
 		root.AddChild(new Label { Text = $"容纳人数: {f.MaxDisciples}人", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
@@ -217,7 +217,8 @@ public partial class MainUI : Control
 			root.AddChild(SP(4));
 			int nextOut = FacilityTable.GetOutput(f.Type, f.Level + 1);
 			root.AddChild(new Label { Text = $"产出: {outputName} {output} → {nextOut}/日", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
-			root.AddChild(new Label { Text = $"任务加成: +{taskBonus * 100:F0}% → +{FacilityTable.GetTaskBonus(f.Type, f.Level + 1, DiscipleTaskType.Cultivate) * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
+			double nextBonus = bonusTask != null ? FacilityTable.GetTaskBonus(f.Type, f.Level + 1, bonusTask.Value) : 0;
+			root.AddChild(new Label { Text = $"任务加成: +{taskBonus * 100:F0}% → +{nextBonus * 100:F0}%", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextBlue));
 			int cost = FacilityTable.GetUpgradeCost(f.Type, f.Level);
 			root.AddChild(new Label { Text = $"晋升费用: {cost}灵石", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextOrange));
 			root.AddChild(SP(6));
@@ -411,8 +412,20 @@ public partial class MainUI : Control
 	{
 		_detailPopup.Title = $"{d.Name} · 行状";
 		var davTex = SpriteSheetManager.GetAvatar(d.IsMale);
-		if (davTex != null) { _detailAvatarPanel.FreeChildren(); _detailAvatarPanel.AddChild(new TextureRect { Texture = davTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, CustomMinimumSize = new Vector2I(84, 84) }); }
-		else { _detailAvatarLabel.Text = d.IsMale ? "♂" : "♀"; _detailAvatarLabel.AddThemeColorOverride("font_color", d.IsMale ? new Color(0.5f, 0.7f, 1.0f) : new Color(1.0f, 0.5f, 0.7f)); }
+		// Remove texture children but keep _detailAvatarLabel alive
+		foreach (var child in _detailAvatarPanel.GetChildren().ToArray())
+			if (child != _detailAvatarLabel) { _detailAvatarPanel.RemoveChild(child); child.QueueFree(); }
+		if (davTex != null)
+		{
+			_detailAvatarLabel.Visible = false;
+			_detailAvatarPanel.AddChild(new TextureRect { Texture = davTex, ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize, StretchMode = TextureRect.StretchModeEnum.KeepAspectCovered, CustomMinimumSize = new Vector2I(84, 84) });
+		}
+		else
+		{
+			_detailAvatarLabel.Visible = true;
+			_detailAvatarLabel.Text = d.IsMale ? "♂" : "♀";
+			_detailAvatarLabel.AddThemeColorOverride("font_color", d.IsMale ? new Color(0.5f, 0.7f, 1.0f) : new Color(1.0f, 0.5f, 0.7f));
+		}
 		_detailName.Text = d.Name; _detailRealm.Text = $"境界: {d.FullRealmName}  (第{d.Age}岁 入门{d.YearsInSect}年)";
 		var fp2 = new List<string>(); if (!string.IsNullOrEmpty(d.Background)) fp2.Add($"身世: {d.Background}"); if (!string.IsNullOrEmpty(d.Personality)) fp2.Add($"性格: {d.Personality}"); if (!string.IsNullOrEmpty(d.Trait) && d.Trait != "无") fp2.Add($"天赋: {d.Trait}");
 		_detailAge.Text = $"灵根: {d.SpiritRootName}  天赋{d.Talent} 悟性{d.Comprehension} 体质{d.Constitution} 神识{d.Spirit}"; if (fp2.Count > 0) _detailAge.Text += $"\n{string.Join("  |  ", fp2)}";
@@ -557,7 +570,14 @@ public partial class MainUI : Control
 
 	void OnPlotStageActivated(PlotStageDef stage)
 	{
-		if (_activeTab == 8) RefreshPlot();
+		UpdatePlotIndicator();
+		if (stage.IsManualAcknowledge)
+		{
+			SwitchToTab(8);
+			RefreshPlot();
+		}
+		else if (_activeTab == 8)
+			RefreshPlot();
 	}
 
 	// ===================== REALM POPUP =====================

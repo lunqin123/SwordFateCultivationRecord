@@ -54,23 +54,24 @@ public partial class MainUI : Control
 		popup.AddThemeColorOverride("font_color", UITheme.Gold);
 		popup.AddThemeColorOverride("font_outline_color", new Color(0,0,0,0.6f));
 		popup.AddThemeConstantOverride("outline_size", 2);
-		popup.Position = new Vector2(0, -10);
-		anchor.AddChild(popup);
+		var globalPos = anchor.GetGlobalRect().Position + new Vector2(anchor.Size.X / 2, 0);
+		popup.Position = globalPos - _floatOverlay.GetGlobalRect().Position + new Vector2(0, -10);
+		_floatOverlay.AddChild(popup);
 		var t = popup.CreateTween().SetParallel();
-		t.TweenProperty(popup, "position", new Vector2(0, -40), 0.8f).SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
+		t.TweenProperty(popup, "position", popup.Position + new Vector2(0, -30), 0.8f).SetEase(Tween.EaseType.Out).SetTrans(Tween.TransitionType.Quad);
 		t.TweenProperty(popup, "modulate", new Color(1,1,1,0), 0.6f).SetEase(Tween.EaseType.In).SetDelay(0.2f);
 		t.Finished += () => popup.QueueFree();
 	}
 	void OnGameNotification(string t, string m)
 	{
-		if (t == "启禀") { _hintLabel.Text = m; _hintPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_hintPopup.GetChild(0)); }
+		if (t is "启禀" or "灵筑解锁" or "功能解锁") { _hintLabel.Text = m; _hintPopup.Title = t; _hintPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_hintPopup.GetChild(0)); }
 		if (t == "宗门倾覆") { _gameOverPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_gameOverPopup.GetChild(0)); }
 	}
 	void OnDiscipleChanged(DiscipleData _) { RefreshDisciples(); RefreshOverview(); }
 
 	// ===================== REFRESH =====================
 
-	void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshTournament(); RefreshTabContent(_activeTab); RefreshBgmIndicator(); RefreshButtons(); }
+	void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshTournament(); RefreshTabContent(_activeTab); RefreshBgmIndicator(); RefreshButtons(); UpdatePlotIndicator(); }
 	void RefreshTime() => _timeLabel.Text = GM.Time.GetDateString();
 	void RefreshSectInfo() { _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}  内门{GM.Disciples.Count}/{GM.MaxDisciples}  外门{GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}"; _realmBtn.Visible = GM.SectLevel >= 3; }
 	void RefreshButtons() { _nextDayBtn.Disabled = GM.PendingEvent != null || GM.PendingRecruitCandidates != null; }
@@ -316,7 +317,7 @@ public partial class MainUI : Control
 				qbtn.AddThemeFontSizeOverride("font_size", 10); qbtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); qbtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
 				qbtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); qbtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
 				var q = qual.Item1; int oc = qual.Item3; int sc = qual.Item4;
-				qbtn.Pressed += () => { if (GM.Resources.Spend(ResourceType.Ore, oc) && GM.Resources.Spend(ResourceType.SpiritStone, sc)) { var ne = EquipmentTable.CraftRandom(GM.SectLevel); if (ne.Quality < q) { ne.Quality = q; ne.UpgradeQuality(); } GM.AllEquipment.Add(ne); AudioManager.PlayBuild(); RefreshFacilities(); } };
+				qbtn.Pressed += () => { if (GM.Resources.Spend(ResourceType.Ore, oc) && GM.Resources.Spend(ResourceType.SpiritStone, sc)) { var ne = EquipmentTable.CraftRandom(GM.SectLevel); if (ne.Quality < q) { while (ne.Quality < q) ne.UpgradeQuality(); } GM.AllEquipment.Add(ne); AudioManager.PlayBuild(); RefreshFacilities(); } };
 				eqInner.AddChild(qbtn); eqInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
 			}
 			ecv.AddChild(eqRow);
@@ -329,12 +330,12 @@ public partial class MainUI : Control
 			pcv.AddChild(SP(8));
 			var pillRow = new HBoxContainer(); var pillc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; pillRow.AddChild(pillc);
 			var pillInner = new HBoxContainer(); pillc.AddChild(pillInner);
-			foreach (var pt in new[] { ("小还丹×3", 5, 20), ("培元丹×5", 12, 50), ("凝神丹×8", 30, 120) })
+			foreach (var pt in new[] { ("小还丹", 3, 5, 20), ("培元丹", 5, 12, 50), ("凝神丹", 8, 30, 120) })
 			{
-				var pbtn = new Button { Text = $"{pt.Item1}\n草{pt.Item2} 灵石{pt.Item3}", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(85, 44) };
+				var pbtn = new Button { Text = $"{pt.Item1}×{pt.Item2}\n草{pt.Item3} 灵石{pt.Item4}", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(85, 44) };
 				pbtn.AddThemeFontSizeOverride("font_size", 10); pbtn.AddThemeColorOverride("font_color", UITheme.TextPrimary); pbtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
 				pbtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal()); pbtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
-				int hc = pt.Item2; int psc = pt.Item3; string pname = pt.Item1; int pcount = int.Parse(pname.Split('×')[1]);
+				int hc = pt.Item3; int psc = pt.Item4; int pcount = pt.Item2;
 				pbtn.Pressed += () => { if (GM.Resources.Spend(ResourceType.Herb, hc) && GM.Resources.Spend(ResourceType.SpiritStone, psc)) { GM.Resources.Add(ResourceType.Pill, pcount); AudioManager.PlayBuild(); RefreshFacilities(); } };
 				pillInner.AddChild(pbtn); pillInner.AddChild(new Control { CustomMinimumSize = new Vector2I(4, 0) });
 			}

@@ -44,7 +44,7 @@ public partial class GameManager : Node
 	public EventData? PendingEvent { get; private set; }
 
 	// 内门选拔
-	public int RecruitTournamentDays { get; private set; } = -1; // -1 = 未安排
+	public int RecruitTournamentDays { get; internal set; } = -1; // -1 = 未安排
 	public List<DiscipleData>? PendingRecruitCandidates { get; private set; }
 	public int TournamentPicksRemaining { get; private set; }
 
@@ -52,8 +52,8 @@ public partial class GameManager : Node
 	public bool AutoAssignEnabled { get; set; }
 	public bool CanAutoAssign => SectLevel >= 2 && Facilities.AllFacilities.Any(f => f.IsBuilt && f.Type == FacilityType.Library);
 
-	public int RngSeed { get; private set; } = Environment.TickCount;
-	private Random _rng = new(RngSeed);
+	public int RngSeed { get; private set; } = System.Environment.TickCount;
+	private Random _rng = new(0);  // reset in InitializeNewGame or ApplyRngSeed
 	private readonly List<DiscipleData> _pendingNewborns = new();
 	public List<LogEntry> EventLogEntries { get; set; } = new();
 
@@ -116,7 +116,7 @@ public partial class GameManager : Node
 		_herbAccum = _oreAccum = _tradeAccum = 0;
 		_outerGrowthAccum = _outerPromoteAccum = 0;
 		AutoAssignEnabled = false;
-		RngSeed = Environment.TickCount;
+		RngSeed = System.Environment.TickCount;
 		_rng = new Random(RngSeed);
 		OuterDiscipleCount = 3 + _rng.Next(0, 3);
 		// Starting equipment
@@ -318,12 +318,30 @@ public partial class GameManager : Node
 		if (SectLevel >= LevelReq.Length) return;
 		if (SectReputation >= LevelReq[SectLevel])
 		{
+			int prevLevel = SectLevel;
 			SectLevel++;
 		LogEvent($"宗门晋升至Lv.{SectLevel}，弟子名额增至{MaxDisciples}人");
 			MaxDisciples = SectLevel <= MaxDiscPerLevel.Length
 				? MaxDiscPerLevel[SectLevel - 1]
 				: MaxDiscPerLevel[^1] + (SectLevel - MaxDiscPerLevel.Length) * 10;
 			EventBus.EmitNotification("宗门晋升", $"宗门晋升至 Lv.{SectLevel}！最大弟子数增至{MaxDisciples}人。");
+
+			// Check newly unlocked facilities
+			var newFacilities = FacilityTable.GetAll().Where(kv => kv.Value.MinSectLevel == SectLevel).ToList();
+			foreach (var (_, info) in newFacilities)
+				EventBus.EmitNotification("灵筑解锁", $"新灵筑「{info.Name}」现已可建造！\n{info.Description}");
+
+			// Check newly unlocked features
+			if (prevLevel < 2 && SectLevel >= 2)
+				EventBus.EmitNotification("功能解锁", "• 外门系统：可招募外门弟子辅助经营\n• 道侣系统：弟子之间可结为道缘\n• 丹房 / 藏经阁 / 会客厅 可建造");
+			if (prevLevel < 3 && SectLevel >= 3)
+				EventBus.EmitNotification("功能解锁", "• 秘境探索：可派遣弟子探索秘境寻宝\n• 阵法殿可建造：提升宗门防御\n• 高阶事件将陆续触发");
+			if (prevLevel < 4 && SectLevel >= 4)
+				EventBus.EmitNotification("功能解锁", "• 上古传承事件已解锁\n• 宗门之战等竞争事件将出现\n• 更多天材地宝机缘等待发掘");
+			if (prevLevel < 5 && SectLevel >= 5)
+				EventBus.EmitNotification("功能解锁", "• 天外邪魔事件：宗门面临重大挑战\n• 顶级机缘事件出现\n• 宗门威名远扬，万宗来朝");
+			if (prevLevel < 6 && SectLevel >= 6)
+				EventBus.EmitNotification("功能解锁", "• 天道碎片争夺\n• 仙器出世事件\n• 飞升雷劫观摩机缘");
 		}
 	}
 

@@ -52,7 +52,7 @@ public static class DiscipleNameTable
         "瑶", "玥", "瑄", "璇", "璞", "琬", "玦", "琨", "琮", "璎",
     };
 
-    private static readonly Random _rng = new();
+    private static Random _rng => Random.Shared;
 
     public static string GenerateName(bool isMale)
     {
