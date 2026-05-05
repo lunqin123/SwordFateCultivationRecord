@@ -32,8 +32,5 @@ public static class CultivationTable
         realm switch { CultivationRealm.Mortal => 0, CultivationRealm.GreatAscension => 1, _ => 9 };
 
     public static bool IsMaxRealm(CultivationRealm realm, int layer)
-    {
-        if (realm == CultivationRealm.GreatAscension) return true;
-        return false; // Mortal always promotes to QiRefining
-    }
+        => realm == CultivationRealm.GreatAscension && layer >= MaxRealmLayer(realm);
 }

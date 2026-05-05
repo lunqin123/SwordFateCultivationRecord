@@ -163,7 +163,7 @@ public class DiscipleSystem
             }
 
             // Auto-rest: if stamina too low, force rest instead
-            if (d.CurrentStamina < 10)
+            if (d.CurrentStamina <= 10)
             {
                 d.CurrentStamina = Math.Min(d.MaxStamina, d.CurrentStamina + 30);
                 d.Mood = Math.Min(100, d.Mood + 12);

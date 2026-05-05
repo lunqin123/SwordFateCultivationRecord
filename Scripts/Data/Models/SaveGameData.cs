@@ -5,7 +5,6 @@ public class SaveGameData
     public string SaveVersion { get; set; } = "1.0";
     public string SaveName { get; set; } = "";
     public DateTime SaveTime { get; set; }
-    public double PlayTimeHours { get; set; }
 
     // Time
     public int CurrentYear { get; set; } = 1;
@@ -25,6 +24,9 @@ public class SaveGameData
     public double HerbAccum { get; set; }
     public double OreAccum { get; set; }
     public double OuterGrowthAccum { get; set; }
+    public double OuterPromoteAccum { get; set; }
+    public bool AutoAssignEnabled { get; set; }
+    public int RecruitTournamentDays { get; set; } = -1;
 
     // State
     public Dictionary<ResourceType, int> Resources { get; set; } = new();

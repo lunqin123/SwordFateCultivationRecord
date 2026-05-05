@@ -1,5 +1,7 @@
 namespace SwordFateCultivationRecord;
 
+public enum BgmLoopMode { List, Single, Random }
+
 public static class GameSettings
 {
     public record ResolutionPreset(string Label, int Width, int Height);
@@ -24,6 +26,7 @@ public static class GameSettings
     public static float MusicVolume { get; set; } = 0.7f;
     public static float SfxVolume { get; set; } = 1.0f;
     public static int BgmIndex { get; set; }
+    public static BgmLoopMode BgmMode { get; set; } = BgmLoopMode.List;
 
     // Gameplay
     public static bool AutoSave { get; set; } = true;
@@ -43,6 +46,7 @@ public static class GameSettings
             AutoSave = (bool)cfg.GetValue("game", "auto_save", true).AsBool();
             AutoSaveInterval = ClampI((int)cfg.GetValue("game", "auto_save_interval", 7).AsInt32(), 1, 30);
             BgmIndex = (int)cfg.GetValue("audio", "bgm_index", 0).AsInt32();
+            BgmMode = (BgmLoopMode)(int)cfg.GetValue("audio", "bgm_mode", 0).AsInt32();
         }
         ApplyDisplay();
         ApplyAudio();
@@ -60,6 +64,7 @@ public static class GameSettings
         cfg.SetValue("game", "auto_save", AutoSave);
         cfg.SetValue("game", "auto_save_interval", AutoSaveInterval);
         cfg.SetValue("audio", "bgm_index", BgmIndex);
+        cfg.SetValue("audio", "bgm_mode", (int)BgmMode);
         cfg.Save(ConfigPath);
     }
 
@@ -102,13 +107,11 @@ public static class GameSettings
         SfxVolume = 1.0f;
         AutoSave = true;
         AutoSaveInterval = 7;
+        BgmMode = BgmLoopMode.List;
         Save();
         ApplyDisplay();
         ApplyAudio();
     }
-
-    private static float LinearToDb(float linear) =>
-        linear > 0.001f ? Mathf.LinearToDb(linear) : -80f;
 
     private static int ClampI(int v, int min, int max) => Math.Max(min, Math.Min(max, v));
     private static float ClampF(float v, float min, float max) => Math.Max(min, Math.Min(max, v));

@@ -24,7 +24,7 @@ public static class EventTable
             Choice1Text = "组织弟子迎战",
             Choice2Text = "开启护山大阵",
             Choice3Text = "暂避锋芒",
-            Choice1Outcome = new() { ResultText = "击退了妖兽，弟子们得到了历练！", DiscipleCultivationBonus = 10, PowerChange = 15, DiscipleStatEffects = new[] { 5, 10, -10 } },
+            Choice1Outcome = new() { ResultText = "击退了妖兽，弟子们得到了历练！", DiscipleCultivationBonus = 10, PowerChange = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 10, HealthChange = -10 } },
             Choice2Outcome = new() { ResultText = "护山大阵成功抵御了攻击，但消耗了大量灵石。", ResourceChanges = { [ResourceType.SpiritStone] = -100 }, ReputationChange = 10 },
             Choice3Outcome = new() { ResultText = "妖兽肆虐后离去，宗门声誉受损。", ReputationChange = -15, PowerChange = -10 },
         },
@@ -36,7 +36,7 @@ public static class EventTable
             Choice1Text = "热情款待",
             Choice2Text = "以礼相待但保持距离",
             Choice3Text = "婉言谢绝",
-            Choice1Outcome = new() { ResultText = "散人传授了珍贵的修炼心得，部分弟子悟性提升！", DiscipleStatEffects = new[] { 10, 15, 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -30 } },
+            Choice1Outcome = new() { ResultText = "散人传授了珍贵的修炼心得，部分弟子悟性提升！", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 10, MoodChange = 15, HealthChange = 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -30 } },
             Choice2Outcome = new() { ResultText = "散人留下了一些丹药作为答谢。", ResourceChanges = { [ResourceType.Pill] = 5 } },
             Choice3Outcome = new() { ResultText = "散人摇头离去，似乎对宗门印象不佳。", ReputationChange = -5 },
         },
@@ -48,9 +48,9 @@ public static class EventTable
             Choice1Text = "允许切磋，点到为止",
             Choice2Text = "制止争执，各打五十大板",
             Choice3Text = "让他们进行生死斗",
-            Choice1Outcome = new() { ResultText = "切磋之后两人惺惺相惜，成为了修炼伙伴。", DiscipleStatEffects = new[] { 5, 10, 0 }, DiscipleCultivationBonus = 5 },
-            Choice2Outcome = new() { ResultText = "两人表面服从，但心中仍有不满。", DiscipleStatEffects = new[] { -5, -5, 0 } },
-            Choice3Outcome = new() { ResultText = "生死斗导致一名弟子重伤，宗门上下议论纷纷。", DiscipleStatEffects = new[] { -15, -20, -30 }, ReputationChange = -10 },
+            Choice1Outcome = new() { ResultText = "切磋之后两人惺惺相惜，成为了修炼伙伴。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 10, HealthChange = 0 }, DiscipleCultivationBonus = 5 },
+            Choice2Outcome = new() { ResultText = "两人表面服从，但心中仍有不满。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -5, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "生死斗导致一名弟子重伤，宗门上下议论纷纷。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -15, MoodChange = -20, HealthChange = -30 }, ReputationChange = -10 },
         },
         new()
         {
@@ -84,7 +84,7 @@ public static class EventTable
             Choice1Text = "派出精锐弟子除魔卫道",
             Choice2Text = "联合其他宗门共同讨伐",
             Choice3Text = "固守宗门，不予理会",
-            Choice1Outcome = new() { ResultText = "成功击退魔修，宗门声望大增！", ReputationChange = 25, PowerChange = 20, DiscipleStatEffects = new[] { 5, 5, -15 } },
+            Choice1Outcome = new() { ResultText = "成功击退魔修，宗门声望大增！", ReputationChange = 25, PowerChange = 20, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 5, HealthChange = -15 } },
             Choice2Outcome = new() { ResultText = "联军成功剿灭魔修，虽消耗资源但收获善缘。", ResourceChanges = { [ResourceType.SpiritStone] = -80 }, ReputationChange = 20 },
             Choice3Outcome = new() { ResultText = "魔修肆虐后离开，附近凡人死伤惨重，宗门被指责不作为。", ReputationChange = -25, PowerChange = -15 },
         },
@@ -120,7 +120,7 @@ public static class EventTable
             Choice1Text = "组织精锐队伍探索",
             Choice2Text = "先派斥候探查虚实",
             Choice3Text = "设下封印，日后再说",
-            Choice1Outcome = new() { ResultText = "遗迹中收获了大量宝物和功法！", ResourceChanges = { [ResourceType.SpiritStone] = 300, [ResourceType.Pill] = 15, [ResourceType.Equipment] = 5 }, DiscipleCultivationBonus = 20, DiscipleStatEffects = new[] { 0, -5, -15 } },
+            Choice1Outcome = new() { ResultText = "遗迹中收获了大量宝物和功法！", ResourceChanges = { [ResourceType.SpiritStone] = 300, [ResourceType.Pill] = 15, [ResourceType.Equipment] = 5 }, DiscipleCultivationBonus = 20, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -5, HealthChange = -15 } },
             Choice2Outcome = new() { ResultText = "斥候发现了遗迹的秘密，安全收获了一批资源。", ResourceChanges = { [ResourceType.SpiritStone] = 150, [ResourceType.Pill] = 8 } },
             Choice3Outcome = new() { ResultText = "遗迹被其他宗门发现，错失良机。", ReputationChange = -10 },
         },
@@ -133,7 +133,7 @@ public static class EventTable
             Choice2Text = "主动出击，先发制人",
             Choice3Text = "向邻近宗门求援",
             Choice1Outcome = new() { ResultText = "护山大阵成功抵挡了攻击，但消耗了大量灵石。", ResourceChanges = { [ResourceType.SpiritStone] = -200 }, ReputationChange = 10, PowerChange = 15 },
-            Choice2Outcome = new() { ResultText = "突袭成功！邪修溃散，缴获不少战利品。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 10 }, ReputationChange = 20, PowerChange = 25, DiscipleStatEffects = new[] { 5, 5, -20 } },
+            Choice2Outcome = new() { ResultText = "突袭成功！邪修溃散，缴获不少战利品。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 10 }, ReputationChange = 20, PowerChange = 25, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 5, HealthChange = -20 } },
             Choice3Outcome = new() { ResultText = "援军赶到，邪修退去，但欠下了人情。", ReputationChange = 5, ResourceChanges = { [ResourceType.SpiritStone] = -80 } },
         },
         new()
@@ -156,7 +156,7 @@ public static class EventTable
             Choice1Text = "全力护法，确保安全",
             Choice2Text = "召集其他弟子观摩学习",
             Choice3Text = "不去打扰，任其自然",
-            Choice1Outcome = new() { ResultText = "弟子成功顿悟，修为大涨！其他弟子也从中获益。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new[] { 5, 10, 0 } },
+            Choice1Outcome = new() { ResultText = "弟子成功顿悟，修为大涨！其他弟子也从中获益。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 10, HealthChange = 0 } },
             Choice2Outcome = new() { ResultText = "观摩的弟子们都有所领悟。", DiscipleCultivationBonus = 15 },
             Choice3Outcome = new() { ResultText = "顿悟自然结束，弟子略有收获。", DiscipleCultivationBonus = 10 },
         },
@@ -169,7 +169,7 @@ public static class EventTable
             Choice1Text = "择优收录，扩充外门",
             Choice2Text = "挑选少数精英",
             Choice3Text = "暂时不收",
-            Choice1Outcome = new() { ResultText = "外门弟子数量大增，宗门基础产出提升！", ResourceChanges = { [ResourceType.SpiritStone] = -30 }, ReputationChange = 10, DiscipleStatEffects = new[] { 0, 5, 0 } },
+            Choice1Outcome = new() { ResultText = "外门弟子数量大增，宗门基础产出提升！", ResourceChanges = { [ResourceType.SpiritStone] = -30 }, ReputationChange = 10, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = 0 } },
             Choice2Outcome = new() { ResultText = "收录了几名资质不错的弟子，其中一人或有内门之资。", DiscipleCultivationBonus = 5 },
             Choice3Outcome = new() { ResultText = "求道者失望离去，宗门口碑受损。", ReputationChange = -5 },
         },
@@ -181,9 +181,9 @@ public static class EventTable
             Choice1Text = "拨款改善外门条件",
             Choice2Text = "派出内门弟子安抚",
             Choice3Text = "武力镇压",
-            Choice1Outcome = new() { ResultText = "外门弟子感激涕零，工作效率大升！", ResourceChanges = { [ResourceType.SpiritStone] = -100 }, DiscipleStatEffects = new[] { 0, 15, 0 } },
-            Choice2Outcome = new() { ResultText = "内门弟子的劝说起了作用，事态平息。", DiscipleStatEffects = new[] { 3, 0, 0 } },
-            Choice3Outcome = new() { ResultText = "外门弟子敢怒不敢言，大量人员悄然离去。", ReputationChange = -15, DiscipleStatEffects = new[] { -5, -20, 0 } },
+            Choice1Outcome = new() { ResultText = "外门弟子感激涕零，工作效率大升！", ResourceChanges = { [ResourceType.SpiritStone] = -100 }, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 15, HealthChange = 0 } },
+            Choice2Outcome = new() { ResultText = "内门弟子的劝说起了作用，事态平息。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 3, MoodChange = 0, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "外门弟子敢怒不敢言，大量人员悄然离去。", ReputationChange = -15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -20, HealthChange = 0 } },
         },
         new()
         {
@@ -194,7 +194,7 @@ public static class EventTable
             Choice2Text = "鼓励弟子在此交换物资",
             Choice3Text = "保持距离，不涉商业",
             Choice1Outcome = new() { ResultText = "坊市为宗门带来了稳定的灵石收入！", ResourceChanges = { [ResourceType.SpiritStone] = 120, [ResourceType.Herb] = 15, [ResourceType.Ore] = 10 }, ReputationChange = 5 },
-            Choice2Outcome = new() { ResultText = "弟子们获得了更多修炼资源，心情愉悦。", DiscipleStatEffects = new[] { 0, 10, 0 }, ResourceChanges = { [ResourceType.Pill] = 5 } },
+            Choice2Outcome = new() { ResultText = "弟子们获得了更多修炼资源，心情愉悦。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 10, HealthChange = 0 }, ResourceChanges = { [ResourceType.Pill] = 5 } },
             Choice3Outcome = new() { ResultText = "坊市独立发展，宗门收获有限。" },
         },
         new()
@@ -229,9 +229,9 @@ public static class EventTable
             Choice1Text = "严惩不贷，杀一儆百",
             Choice2Text = "从轻发落，给其改过的机会",
             Choice3Text = "私下处理，低调解决",
-            Choice1Outcome = new() { ResultText = "严厉的惩罚震慑了其他人，但宗门气氛变得紧张。", DiscipleStatEffects = new[] { 5, -10, 0 }, ReputationChange = 5 },
-            Choice2Outcome = new() { ResultText = "犯错弟子痛哭流涕，发誓重新做人。但丹药已无法追回。", ResourceChanges = { [ResourceType.Pill] = -5 }, DiscipleStatEffects = new[] { 0, -5, 0 } },
-            Choice3Outcome = new() { ResultText = "事情被压了下来，但私下闲言碎语不断。", DiscipleStatEffects = new[] { -5, -5, 0 } },
+            Choice1Outcome = new() { ResultText = "严厉的惩罚震慑了其他人，但宗门气氛变得紧张。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = -10, HealthChange = 0 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "犯错弟子痛哭流涕，发誓重新做人。但丹药已无法追回。", ResourceChanges = { [ResourceType.Pill] = -5 }, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -5, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "事情被压了下来，但私下闲言碎语不断。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -5, HealthChange = 0 } },
         },
         new()
         {
@@ -241,7 +241,7 @@ public static class EventTable
             Choice1Text = "组织精锐探索秘境",
             Choice2Text = "先驻扎封锁，慢慢研究",
             Choice3Text = "邀请友好宗门共同探索",
-            Choice1Outcome = new() { ResultText = "秘境中收获了大量上古遗宝和功法！但部分弟子受了轻伤。", ResourceChanges = { [ResourceType.SpiritStone] = 250, [ResourceType.Pill] = 12, [ResourceType.Equipment] = 6 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { 0, 5, -15 } },
+            Choice1Outcome = new() { ResultText = "秘境中收获了大量上古遗宝和功法！但部分弟子受了轻伤。", ResourceChanges = { [ResourceType.SpiritStone] = 250, [ResourceType.Pill] = 12, [ResourceType.Equipment] = 6 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = -15 } },
             Choice2Outcome = new() { ResultText = "逐步探索减少了风险，稳定获得了一批资源。", ResourceChanges = { [ResourceType.SpiritStone] = 150, [ResourceType.Pill] = 6 }, ReputationChange = 10 },
             Choice3Outcome = new() { ResultText = "合作探索虽然分走了一些宝物，但加深了宗门友谊。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 8 }, ReputationChange = 20 },
         },
@@ -253,8 +253,8 @@ public static class EventTable
             Choice1Text = "破格录取为内门弟子",
             Choice2Text = "从外门做起，凭实力晋升",
             Choice3Text = "婉言谢绝",
-            Choice1Outcome = new() { ResultText = "散修们加入后，宗门的实力有所提升。但部分老弟子心中不平。", DiscipleCultivationBonus = 10, DiscipleStatEffects = new[] { -5, 5, 0 }, ReputationChange = 5 },
-            Choice2Outcome = new() { ResultText = "散修们虽有不悦，但最终接受。其中一人展现出惊人天赋。", DiscipleStatEffects = new[] { 0, -3, 0 }, ReputationChange = 3 },
+            Choice1Outcome = new() { ResultText = "散修们加入后，宗门的实力有所提升。但部分老弟子心中不平。", DiscipleCultivationBonus = 10, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = 5, HealthChange = 0 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "散修们虽有不悦，但最终接受。其中一人展现出惊人天赋。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -3, HealthChange = 0 }, ReputationChange = 3 },
             Choice3Outcome = new() { ResultText = "散修们摇头离去，转而加入了邻近宗门。", ReputationChange = -5 },
         },
 
@@ -267,9 +267,9 @@ public static class EventTable
             Choice1Text = "护法引导，助其渡过",
             Choice2Text = "让二人自行面对",
             Choice3Text = "强行分开闭关",
-            Choice1Outcome = new() { ResultText = "道侣同心协力渡过情劫，感情更深，修为精进！", DiscipleCultivationBonus = 20, DiscipleStatEffects = new[] { 5, 15, 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -50 } },
-            Choice2Outcome = new() { ResultText = "二人勉强渡过，各有感悟但情感受创。", DiscipleCultivationBonus = 10, DiscipleStatEffects = new[] { -5, -10, -5 } },
-            Choice3Outcome = new() { ResultText = "强行分开避免了大祸，但二人心中留下芥蒂。", DiscipleStatEffects = new[] { -10, -20, 0 }, ReputationChange = -5 },
+            Choice1Outcome = new() { ResultText = "道侣同心协力渡过情劫，感情更深，修为精进！", DiscipleCultivationBonus = 20, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 15, HealthChange = 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -50 } },
+            Choice2Outcome = new() { ResultText = "二人勉强渡过，各有感悟但情感受创。", DiscipleCultivationBonus = 10, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -10, HealthChange = -5 } },
+            Choice3Outcome = new() { ResultText = "强行分开避免了大祸，但二人心中留下芥蒂。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -10, MoodChange = -20, HealthChange = 0 }, ReputationChange = -5 },
         },
         new()
         {
@@ -281,7 +281,7 @@ public static class EventTable
             Choice3Text = "打断修炼，以防不测",
             Choice1Outcome = new() { ResultText = "道侣双双突破，宗门灵气大盛！", DiscipleCultivationBonus = 35, ResourceChanges = { [ResourceType.SpiritStone] = -100 }, ReputationChange = 15 },
             Choice2Outcome = new() { ResultText = "二人自然完成顿悟，修为稳步提升。", DiscipleCultivationBonus = 20 },
-            Choice3Outcome = new() { ResultText = "虽然打断了一次机缘，但避免了走火入魔的风险。", DiscipleStatEffects = new[] { -5, -10, 0 } },
+            Choice3Outcome = new() { ResultText = "虽然打断了一次机缘，但避免了走火入魔的风险。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -10, HealthChange = 0 } },
         },
         new()
         {
@@ -291,9 +291,9 @@ public static class EventTable
             Choice1Text = "出面调解，劝说和好",
             Choice2Text = "安排二人共同执行任务",
             Choice3Text = "严厉训斥二人",
-            Choice1Outcome = new() { ResultText = "二人和好如初，感情更胜从前。", DiscipleStatEffects = new[] { 5, 15, 0 }, ReputationChange = 5 },
-            Choice2Outcome = new() { ResultText = "任务中的配合让二人重新找回了默契。", DiscipleStatEffects = new[] { 3, 5, 0 }, DiscipleCultivationBonus = 5 },
-            Choice3Outcome = new() { ResultText = "二人表面服从，但心中更加不满。", DiscipleStatEffects = new[] { -10, -15, 0 }, ReputationChange = -5 },
+            Choice1Outcome = new() { ResultText = "二人和好如初，感情更胜从前。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 15, HealthChange = 0 }, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "任务中的配合让二人重新找回了默契。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 3, MoodChange = 5, HealthChange = 0 }, DiscipleCultivationBonus = 5 },
+            Choice3Outcome = new() { ResultText = "二人表面服从，但心中更加不满。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -10, MoodChange = -15, HealthChange = 0 }, ReputationChange = -5 },
         },
         new()
         {
@@ -303,9 +303,9 @@ public static class EventTable
             Choice1Text = "严词拒绝，维护宗门风气",
             Choice2Text = "收下宝物但不予理会",
             Choice3Text = "观望事态发展",
-            Choice1Outcome = new() { ResultText = "外来修士灰溜溜离去，宗门风气正派，声望提升。", ReputationChange = 10, DiscipleStatEffects = new[] { 3, 5, 0 } },
-            Choice2Outcome = new() { ResultText = "宝物到手但引起道侣间猜疑，感情受损。", ResourceChanges = { [ResourceType.SpiritStone] = 50 }, DiscipleStatEffects = new[] { -5, -10, 0 } },
-            Choice3Outcome = new() { ResultText = "弟子道心动摇，道缘出现裂痕。", DiscipleStatEffects = new[] { -10, -15, 0 }, ReputationChange = -10 },
+            Choice1Outcome = new() { ResultText = "外来修士灰溜溜离去，宗门风气正派，声望提升。", ReputationChange = 10, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 3, MoodChange = 5, HealthChange = 0 } },
+            Choice2Outcome = new() { ResultText = "宝物到手但引起道侣间猜疑，感情受损。", ResourceChanges = { [ResourceType.SpiritStone] = 50 }, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -10, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "弟子道心动摇，道缘出现裂痕。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -10, MoodChange = -15, HealthChange = 0 }, ReputationChange = -10 },
         },
         new()
         {
@@ -315,8 +315,8 @@ public static class EventTable
             Choice1Text = "举办盛大庆典",
             Choice2Text = "低调吸收天赐灵气",
             Choice3Text = "顺其自然",
-            Choice1Outcome = new() { ResultText = "庆典吸引了四方散修观礼，宗门声望大涨，道侣感情升华！", ReputationChange = 20, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { 10, 20, 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -80 } },
-            Choice2Outcome = new() { ResultText = "天赐灵气被二人全数吸收，修为大进。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new[] { 5, 10, 0 } },
+            Choice1Outcome = new() { ResultText = "庆典吸引了四方散修观礼，宗门声望大涨，道侣感情升华！", ReputationChange = 20, DiscipleCultivationBonus = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 10, MoodChange = 20, HealthChange = 0 }, ResourceChanges = { [ResourceType.SpiritStone] = -80 } },
+            Choice2Outcome = new() { ResultText = "天赐灵气被二人全数吸收，修为大进。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 10, HealthChange = 0 } },
             Choice3Outcome = new() { ResultText = "霞光自然消散，留下淡淡余韵，二人心有感悟。", DiscipleCultivationBonus = 10, ReputationChange = 5 },
         },
 
@@ -331,7 +331,7 @@ public static class EventTable
             Choice3Text = "节约使用，减缓消耗",
             Choice1Outcome = new() { ResultText = "灵石投入后灵脉恢复了活力，甚至比以前更浓郁了！", ResourceChanges = { [ResourceType.SpiritStone] = -300, [ResourceType.SpiritEssence] = 40 }, ReputationChange = 5 },
             Choice2Outcome = new() { ResultText = "探索队在百里外发现了一条新的小型灵脉，暂时缓解了危机。", ResourceChanges = { [ResourceType.SpiritEssence] = 20, [ResourceType.SpiritStone] = -80 } },
-            Choice3Outcome = new() { ResultText = "灵气浓度持续下降，宗门修炼效率大降。", DiscipleStatEffects = new[] { 0, -10, 0 }, DiscipleCultivationBonus = -10 },
+            Choice3Outcome = new() { ResultText = "灵气浓度持续下降，宗门修炼效率大降。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -10, HealthChange = 0 }, DiscipleCultivationBonus = -10 },
         },
         new()
         {
@@ -341,7 +341,7 @@ public static class EventTable
             Choice1Text = "派遣弟子前去感悟",
             Choice2Text = "收集残余天雷之力",
             Choice3Text = "不值得冒险",
-            Choice1Outcome = new() { ResultText = "弟子们在劫雷余韵中获得了珍贵的感悟，部分人修为大增！", DiscipleCultivationBonus = 30, DiscipleStatEffects = new[] { 0, 5, -10 } },
+            Choice1Outcome = new() { ResultText = "弟子们在劫雷余韵中获得了珍贵的感悟，部分人修为大增！", DiscipleCultivationBonus = 30, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = -10 } },
             Choice2Outcome = new() { ResultText = "收集到的天雷之力被炼化成了淬体宝物。", ResourceChanges = { [ResourceType.Equipment] = 5, [ResourceType.Pill] = 8 } },
             Choice3Outcome = new() { ResultText = "天劫余波自行消散。", ReputationChange = -3 },
         },
@@ -353,9 +353,9 @@ public static class EventTable
             Choice1Text = "正式承认大比，给予晋升名额",
             Choice2Text = "允许举办但不承诺晋升",
             Choice3Text = "外门弟子无需大比",
-            Choice1Outcome = new() { ResultText = "外门弟子斗志昂扬，优胜者晋升内门，宗门实力增长！", DiscipleStatEffects = new[] { 5, 15, 0 }, DiscipleCultivationBonus = 8, ReputationChange = 5 },
-            Choice2Outcome = new() { ResultText = "大比依然举办，但弟子们有些失望，士气略有影响。", DiscipleStatEffects = new[] { 0, -5, 0 } },
-            Choice3Outcome = new() { ResultText = "外门弟子大失所望，不少人萌生去意。", DiscipleStatEffects = new[] { -5, -15, 0 } },
+            Choice1Outcome = new() { ResultText = "外门弟子斗志昂扬，优胜者晋升内门，宗门实力增长！", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 15, HealthChange = 0 }, DiscipleCultivationBonus = 8, ReputationChange = 5 },
+            Choice2Outcome = new() { ResultText = "大比依然举办，但弟子们有些失望，士气略有影响。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -5, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "外门弟子大失所望，不少人萌生去意。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -15, HealthChange = 0 } },
         },
         new()
         {
@@ -389,7 +389,7 @@ public static class EventTable
             Choice1Text = "率队深入古墓探查",
             Choice2Text = "小心挖掘，逐步推进",
             Choice3Text = "封存古墓，来日再探",
-            Choice1Outcome = new() { ResultText = "古墓中获得了数件古宝和大量丹药！但遭遇了机关陷阱，部分弟子受伤。", ResourceChanges = { [ResourceType.Equipment] = 10, [ResourceType.Pill] = 8, [ResourceType.SpiritStone] = 50 }, DiscipleStatEffects = new[] { 0, 5, -20 } },
+            Choice1Outcome = new() { ResultText = "古墓中获得了数件古宝和大量丹药！但遭遇了机关陷阱，部分弟子受伤。", ResourceChanges = { [ResourceType.Equipment] = 10, [ResourceType.Pill] = 8, [ResourceType.SpiritStone] = 50 }, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = -20 } },
             Choice2Outcome = new() { ResultText = "安全获得了一批古宝，虽然数量少了些，但无人伤亡。", ResourceChanges = { [ResourceType.Equipment] = 5, [ResourceType.Pill] = 3 } },
             Choice3Outcome = new() { ResultText = "古墓被封存，但消息已经传出，两个月后被他人捷足先登。", ReputationChange = -5 },
         },
@@ -401,8 +401,8 @@ public static class EventTable
             Choice1Text = "引导天道之力灌注宗门根基",
             Choice2Text = "引导天道之力融入弟子修炼",
             Choice3Text = "尝试参悟天道玄机",
-            Choice1Outcome = new() { ResultText = "天道之力融入宗门根基，灵脉变得更加深厚，声望大振！", ResourceChanges = { [ResourceType.SpiritEssence] = 100, [ResourceType.SpiritStone] = 200 }, ReputationChange = 30, DiscipleStatEffects = new[] { 5, 10, 0 } },
-            Choice2Outcome = new() { ResultText = "天道之力涌入弟子体内，多人当场突破！", DiscipleCultivationBonus = 50, DiscipleStatEffects = new[] { 10, 20, 0 }, ReputationChange = 10 },
+            Choice1Outcome = new() { ResultText = "天道之力融入宗门根基，灵脉变得更加深厚，声望大振！", ResourceChanges = { [ResourceType.SpiritEssence] = 100, [ResourceType.SpiritStone] = 200 }, ReputationChange = 30, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 10, HealthChange = 0 } },
+            Choice2Outcome = new() { ResultText = "天道之力涌入弟子体内，多人当场突破！", DiscipleCultivationBonus = 50, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 10, MoodChange = 20, HealthChange = 0 }, ReputationChange = 10 },
             Choice3Outcome = new() { ResultText = "你从天道感应中领悟了一丝大道至理。", DiscipleCultivationBonus = 25, ReputationChange = 15 },
         },
 
@@ -416,7 +416,7 @@ public static class EventTable
             Choice2Text = "集结精锐主动出击",
             Choice3Text = "向修仙界发出求援信号",
             Choice1Outcome = new() { ResultText = "大阵成功挡住邪魔进攻，但消耗了海量灵石。修仙界对宗门防御能力刮目相看！", ResourceChanges = { [ResourceType.SpiritStone] = -500, [ResourceType.SpiritEssence] = -30 }, ReputationChange = 40, PowerChange = 30 },
-            Choice2Outcome = new() { ResultText = "弟子们英勇奋战击退邪魔先锋！从残骸中获得了珍贵的天外材料。", ResourceChanges = { [ResourceType.Ore] = 80, [ResourceType.Equipment] = 15 }, DiscipleStatEffects = new[] { 10, 15, -25 }, ReputationChange = 50, PowerChange = 50 },
+            Choice2Outcome = new() { ResultText = "弟子们英勇奋战击退邪魔先锋！从残骸中获得了珍贵的天外材料。", ResourceChanges = { [ResourceType.Ore] = 80, [ResourceType.Equipment] = 15 }, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 10, MoodChange = 15, HealthChange = -25 }, ReputationChange = 50, PowerChange = 50 },
             Choice3Outcome = new() { ResultText = "援军赶到，邪魔被击退。虽欠下人情但宗门地位大幅提升。", ReputationChange = 30, ResourceChanges = { [ResourceType.SpiritStone] = -200 } },
         },
         new()
@@ -428,7 +428,7 @@ public static class EventTable
             Choice2Text = "集思广益多人参详",
             Choice3Text = "封印保存等实力足够再解封",
             Choice1Outcome = new() { ResultText = "弟子成功参悟上古功法修为突飞猛进！宗门从此多了一门镇宗绝学。", DiscipleCultivationBonus = 40, ReputationChange = 20, PowerChange = 30 },
-            Choice2Outcome = new() { ResultText = "多名弟子各有所悟，整体提升可观。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new[] { 5, 5, 0 } },
+            Choice2Outcome = new() { ResultText = "多名弟子各有所悟，整体提升可观。", DiscipleCultivationBonus = 25, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 5, HealthChange = 0 } },
             Choice3Outcome = new() { ResultText = "传承被安全保存，等待有缘之人。", ReputationChange = 5 },
         },
         new()
@@ -440,8 +440,8 @@ public static class EventTable
             Choice2Text = "居中调解化干戈为玉帛",
             Choice3Text = "坐山观虎斗渔翁得利",
             Choice1Outcome = new() { ResultText = "战争迅速结束，你分得了矿脉的部分权益。但另一方对你心生怨恨。", ResourceChanges = { [ResourceType.SpiritStone] = 500, [ResourceType.Ore] = 60 }, ReputationChange = 15, PowerChange = 20 },
-            Choice2Outcome = new() { ResultText = "成功调解了争端，两方都对你感激不尽。宗门声望大增！", ReputationChange = 35, DiscipleStatEffects = new[] { 5, 5, 0 } },
-            Choice3Outcome = new() { ResultText = "两败俱伤后趁势吞并了矿区。收获巨大但名声受损。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Ore] = 100 }, ReputationChange = -10, DiscipleStatEffects = new[] { -3, 0, 0 } },
+            Choice2Outcome = new() { ResultText = "成功调解了争端，两方都对你感激不尽。宗门声望大增！", ReputationChange = 35, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 5, HealthChange = 0 } },
+            Choice3Outcome = new() { ResultText = "两败俱伤后趁势吞并了矿区。收获巨大但名声受损。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Ore] = 100 }, ReputationChange = -10, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -3, MoodChange = 0, HealthChange = 0 } },
         },
         new()
         {
@@ -452,8 +452,8 @@ public static class EventTable
             Choice2Text = "婉拒大能，弟子是宗门的人",
             Choice3Text = "接受条件换取弟子离开",
             Choice1Outcome = new() { ResultText = "弟子选择留下，大能虽失望但欣赏宗门气度，留下了一份重礼。", ResourceChanges = { [ResourceType.Pill] = 20, [ResourceType.Equipment] = 5 }, ReputationChange = 15 },
-            Choice2Outcome = new() { ResultText = "大能勃然大怒但碍于宗门实力不敢发作。弟子对宗门更加忠诚。", DiscipleStatEffects = new[] { 15, 5, 0 }, ReputationChange = 5 },
-            Choice3Outcome = new() { ResultText = "大能留下丰厚报酬和修炼心得，弟子含泪离去。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Pill] = 15 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new[] { -5, -10, 0 } },
+            Choice2Outcome = new() { ResultText = "大能勃然大怒但碍于宗门实力不敢发作。弟子对宗门更加忠诚。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 15, MoodChange = 5, HealthChange = 0 }, ReputationChange = 5 },
+            Choice3Outcome = new() { ResultText = "大能留下丰厚报酬和修炼心得，弟子含泪离去。", ResourceChanges = { [ResourceType.SpiritStone] = 800, [ResourceType.Pill] = 15 }, DiscipleCultivationBonus = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = -5, MoodChange = -10, HealthChange = 0 } },
         },
         new()
         {
@@ -463,7 +463,7 @@ public static class EventTable
             Choice1Text = "带领精锐弟子前去观礼",
             Choice2Text = "远程感应劫雷之力",
             Choice3Text = "趁机吸收汇聚而来的灵气",
-            Choice1Outcome = new() { ResultText = "亲眼目睹飞升之劫，弟子们道心大受震撼！多人当场顿悟突破。", DiscipleCultivationBonus = 60, ReputationChange = 25, DiscipleStatEffects = new[] { 5, 15, 0 } },
+            Choice1Outcome = new() { ResultText = "亲眼目睹飞升之劫，弟子们道心大受震撼！多人当场顿悟突破。", DiscipleCultivationBonus = 60, ReputationChange = 25, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 15, HealthChange = 0 } },
             Choice2Outcome = new() { ResultText = "虽未亲临但从劫雷中领悟了一丝天机，弟子各有感悟。", DiscipleCultivationBonus = 30 },
             Choice3Outcome = new() { ResultText = "宗门灵气浓度暴增，弟子修炼速度大幅提升。", ResourceChanges = { [ResourceType.SpiritEssence] = 80 }, DiscipleCultivationBonus = 20 },
         },
@@ -475,9 +475,9 @@ public static class EventTable
             Choice1Text = "举办盛大的万宗大典",
             Choice2Text = "低调接待专注实质交流",
             Choice3Text = "借机展示武力震慑四方",
-            Choice1Outcome = new() { ResultText = "大典盛况空前！宗门声望达到新的高峰。各方来客赞不绝口。", ResourceChanges = { [ResourceType.SpiritStone] = -300 }, ReputationChange = 60, DiscipleStatEffects = new[] { 5, 15, 0 } },
+            Choice1Outcome = new() { ResultText = "大典盛况空前！宗门声望达到新的高峰。各方来客赞不绝口。", ResourceChanges = { [ResourceType.SpiritStone] = -300 }, ReputationChange = 60, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = 15, HealthChange = 0 } },
             Choice2Outcome = new() { ResultText = "实质性的交流带来了宝贵的外交成果和技术交换。", ResourceChanges = { [ResourceType.Pill] = 15, [ResourceType.Equipment] = 8 }, ReputationChange = 25, DiscipleCultivationBonus = 10 },
-            Choice3Outcome = new() { ResultText = "武力展示起到震慑效果但也引起了一些宗门的不安。", ReputationChange = 35, PowerChange = 30, DiscipleStatEffects = new[] { 5, -5, 0 } },
+            Choice3Outcome = new() { ResultText = "武力展示起到震慑效果但也引起了一些宗门的不安。", ReputationChange = 35, PowerChange = 30, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 5, MoodChange = -5, HealthChange = 0 } },
         },
         new()
         {
@@ -511,9 +511,9 @@ public static class EventTable
             Choice1Text = "倾巢而出争夺仙器",
             Choice2Text = "派出小队伺机而动",
             Choice3Text = "放弃争夺专注宗门发展",
-            Choice1Outcome = new() { ResultText = "仙器被成功夺回！虽付出伤亡代价但这件仙器将成为宗门镇宗之宝！", ResourceChanges = { [ResourceType.Equipment] = 25 }, ReputationChange = 60, PowerChange = 80, DiscipleStatEffects = new[] { 10, 15, -30 } },
+            Choice1Outcome = new() { ResultText = "仙器被成功夺回！虽付出伤亡代价但这件仙器将成为宗门镇宗之宝！", ResourceChanges = { [ResourceType.Equipment] = 25 }, ReputationChange = 60, PowerChange = 80, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 10, MoodChange = 15, HealthChange = -30 } },
             Choice2Outcome = new() { ResultText = "虽没得到仙器本身但趁机收集了大量古战场的遗宝。", ResourceChanges = { [ResourceType.SpiritStone] = 300, [ResourceType.Equipment] = 10, [ResourceType.Pill] = 15 } },
-            Choice3Outcome = new() { ResultText = "避免了无谓伤亡，宗门稳定发展。但仙器落入他手未来可能成为威胁。", DiscipleStatEffects = new[] { 0, -10, 0 }, ReputationChange = -5 },
+            Choice3Outcome = new() { ResultText = "避免了无谓伤亡，宗门稳定发展。但仙器落入他手未来可能成为威胁。", DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = -10, HealthChange = 0 }, ReputationChange = -5 },
         },
 
         new()
@@ -524,7 +524,7 @@ public static class EventTable
             Choice1Text = "组织精锐弟子探索秘境",
             Choice2Text = "先做充分准备再探索",
             Choice3Text = "当作无事发生",
-            Choice1Outcome = new() { ResultText = "弟子们踏入秘境，收获了一大批上古宝物！", ResourceChanges = { [ResourceType.SpiritStone] = 200, [ResourceType.Pill] = 8, [ResourceType.Equipment] = 5 }, DiscipleCultivationBonus = 10, ReputationChange = 15, DiscipleStatEffects = new[] { 0, 5, -10 } },
+            Choice1Outcome = new() { ResultText = "弟子们踏入秘境，收获了一大批上古宝物！", ResourceChanges = { [ResourceType.SpiritStone] = 200, [ResourceType.Pill] = 8, [ResourceType.Equipment] = 5 }, DiscipleCultivationBonus = 10, ReputationChange = 15, DiscipleStatEffects = new DiscipleStatEffect { LoyaltyChange = 0, MoodChange = 5, HealthChange = -10 } },
             Choice2Outcome = new() { ResultText = "准备充分后再次探索，安全收获了一批资源。", ResourceChanges = { [ResourceType.SpiritStone] = 100, [ResourceType.Pill] = 4 }, ReputationChange = 5 },
             Choice3Outcome = new() { ResultText = "秘境入口自行闭合，不知何时才能再次开启。", ReputationChange = -3 },
         },

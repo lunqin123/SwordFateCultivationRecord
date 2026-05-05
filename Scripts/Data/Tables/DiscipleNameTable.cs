@@ -95,7 +95,7 @@ public static class DiscipleNameTable
 
     public static (int talent, int comprehension, int constitution, int spirit) GenerateStats()
     {
-        int remaining = 200;
+        int remaining = 140;
         int t = _rng.Next(20, 81);
         remaining -= t;
         int co = _rng.Next(20, Math.Min(81, remaining + 20));

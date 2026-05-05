@@ -52,12 +52,13 @@ public partial class GameManager : Node
 	public bool AutoAssignEnabled { get; set; }
 	public bool CanAutoAssign => SectLevel >= 2 && Facilities.AllFacilities.Any(f => f.IsBuilt && f.Type == FacilityType.Library);
 
-	private readonly Random _rng = new();
+	public int RngSeed { get; private set; } = Environment.TickCount;
+	private Random _rng = new(RngSeed);
 	private readonly List<DiscipleData> _pendingNewborns = new();
 	public List<LogEntry> EventLogEntries { get; set; } = new();
 
 	// ====== Level thresholds ======
-	private static readonly int[] LevelReq = { 0, 100, 300, 600, 1000, 1500, 2500 };
+	private static readonly int[] LevelReq = { 0, 100, 300, 600, 1000, 2000, 2500 };
 	private static readonly int[] MaxDiscPerLevel = { 5, 8, 12, 18, 25, 35, 50 };
 
 	public string SectTitle => SectReputation switch
@@ -112,6 +113,12 @@ public partial class GameManager : Node
 		PendingRecruitCandidates = null;
 		EventLogEntries.Clear();
 		_pendingNewborns.Clear();
+		_herbAccum = _oreAccum = _tradeAccum = 0;
+		_outerGrowthAccum = _outerPromoteAccum = 0;
+		AutoAssignEnabled = false;
+		RngSeed = Environment.TickCount;
+		_rng = new Random(RngSeed);
+		OuterDiscipleCount = 3 + _rng.Next(0, 3);
 		// Starting equipment
 		AllEquipment.Add(new EquipmentData { Id = 1, Name = "铁剑", Quality = EquipmentQuality.Common, Description = "宗门传承的铁剑", CombatBonus = 5 });
 		AllEquipment.Add(new EquipmentData { Id = 2, Name = "静心蒲团", Quality = EquipmentQuality.Common, Description = "辅助修炼的蒲团", CultivationSpeedBonus = 0.05 });
@@ -145,13 +152,13 @@ public partial class GameManager : Node
 		if (!IsInitialized || PendingEvent != null || PendingRecruitCandidates != null) return;
 		for (int i = 0; i < days; i++)
 		{
-			RunDailyCycle(isFastForward: true);
+			RunDailyCycle();
 			if (PendingEvent != null || PendingRecruitCandidates != null) return;
 			if (CheckGameOver()) return;
 		}
 	}
 
-	private void RunDailyCycle(bool isFastForward = false)
+	private void RunDailyCycle()
 	{
 		// 1. Facility construction progress & income calc
 		Facilities.ProcessDaily(Resources);
@@ -205,14 +212,11 @@ public partial class GameManager : Node
 		if (GameSettings.AutoSave && Time.GetTotalDays() % GameSettings.AutoSaveInterval == 0)
 			SaveGame(9);
 
-		// 10. Random event (skip during fast-forward)
-		if (!isFastForward)
+		// 10. Random event (triggers during fast-forward too)
+		PendingEvent = Events.TryTriggerEvent(SectLevel);
+		if (PendingEvent != null)
 		{
-			PendingEvent = Events.TryTriggerEvent(SectLevel);
-			if (PendingEvent != null)
-			{
-				EventBus.EmitEventChoiceRequired(PendingEvent);
-			}
+			EventBus.EmitEventChoiceRequired(PendingEvent);
 		}
 	}
 
@@ -232,13 +236,13 @@ public partial class GameManager : Node
 		int gather = OuterGatherCount, trade = OuterTradeCount, idle = OuterIdleCount;
 
 		// Gathering: herbs + ore
-		_herbAccum += gather * 0.22 * eff;
-		_oreAccum += gather * 0.16 * eff;
+		_herbAccum += gather * 0.30 * eff;
+		_oreAccum += gather * 0.22 * eff;
 		int herbGain = (int)_herbAccum; if (herbGain > 0) { Resources.Add(ResourceType.Herb, herbGain); _herbAccum -= herbGain; }
 		int oreGain = (int)_oreAccum; if (oreGain > 0) { Resources.Add(ResourceType.Ore, oreGain); _oreAccum -= oreGain; }
 
 		// Trading: spirit stones
-		_tradeAccum += trade * 0.25 * eff;
+		_tradeAccum += trade * 0.40 * eff;
 		int tradeGain = (int)_tradeAccum; if (tradeGain > 0) { Resources.Add(ResourceType.SpiritStone, tradeGain); _tradeAccum -= tradeGain; }
 
 		// Maintenance: gather+trade cost spirit stones (idle costs nothing)
@@ -261,7 +265,7 @@ public partial class GameManager : Node
 		// Promotion to inner: idle outer disciples sometimes show talent
 		if (idle > 0)
 		{
-			_outerPromoteAccum += idle * 0.003;
+			_outerPromoteAccum += idle * 0.01;
 			if (_outerPromoteAccum >= 1 && Disciples.Count < MaxDisciples)
 			{
 				_outerPromoteAccum = 0;
@@ -764,8 +768,8 @@ public partial class GameManager : Node
 		if (data == null) return false;
 		SaveLoad.ApplySaveData(data, this);
 		PendingEvent = null;
-		RecruitTournamentDays = -1;
 		PendingRecruitCandidates = null;
+		EventBus.Clear();
 		EventBus.ChildBorn += (child, _, _) => _pendingNewborns.Add(child);
 		EventBus.DiscipleRecruited += d => LogEvent($"{d.Name}加入宗门");
 		EventBus.BreakthroughSuccess += d => LogEvent($"{d.Name}成功突破至{d.FullRealmName}！");
@@ -774,5 +778,23 @@ public partial class GameManager : Node
 		EventBus.DiscipleDeparted += OnDiscipleDeparted;
 		RefreshEquipmentBonuses();
 		return true;
+	}
+
+	// ====== Save/Load helpers for private fields ======
+	internal double GetHerbAccum() => _herbAccum;
+	internal double GetOreAccum() => _oreAccum;
+	internal double GetTradeAccum() => _tradeAccum;
+	internal double GetOuterGrowthAccum() => _outerGrowthAccum;
+	internal double GetOuterPromoteAccum() => _outerPromoteAccum;
+	internal void SetHerbAccum(double v) => _herbAccum = v;
+	internal void SetOreAccum(double v) => _oreAccum = v;
+	internal void SetTradeAccum(double v) => _tradeAccum = v;
+	internal void SetOuterGrowthAccum(double v) => _outerGrowthAccum = v;
+	internal void SetOuterPromoteAccum(double v) => _outerPromoteAccum = v;
+
+	internal void ApplyRngSeed(int seed)
+	{
+		RngSeed = seed;
+		_rng = new Random(seed);
 	}
 }

@@ -119,9 +119,24 @@ public static class AudioManager
         _root!.CallDeferred(Node.MethodName.AddChild, _bgmPlayer);
         _bgmPlayer.Finished += () =>
         {
-            int next = (GameSettings.BgmIndex + 1) % _bgmPaths.Count;
-            GameSettings.BgmIndex = next;
-            PlayBgmTrack(next);
+            switch (GameSettings.BgmMode)
+            {
+                case BgmLoopMode.Single:
+                    PlayBgmTrack(GameSettings.BgmIndex);
+                    break;
+                case BgmLoopMode.Random:
+                    int randIdx = Random.Shared.Next(_bgmPaths.Count);
+                    GameSettings.BgmIndex = randIdx;
+                    GameSettings.Save();
+                    PlayBgmTrack(randIdx);
+                    break;
+                default:
+                    int next = (GameSettings.BgmIndex + 1) % _bgmPaths.Count;
+                    GameSettings.BgmIndex = next;
+                    GameSettings.Save();
+                    PlayBgmTrack(next);
+                    break;
+            }
         };
         _bgmPlayer.CallDeferred(AudioStreamPlayer.MethodName.Play);
     }

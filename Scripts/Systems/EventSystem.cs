@@ -81,9 +81,9 @@ public class EventSystem
         {
             foreach (var d in discipleSystem.AllDisciples)
             {
-                d.Loyalty = Math.Clamp(d.Loyalty + outcome.DiscipleStatEffects[0], 0, 100);
-                d.Mood = Math.Clamp(d.Mood + outcome.DiscipleStatEffects[1], 0, 100);
-                d.Health = Math.Clamp(d.Health + outcome.DiscipleStatEffects[2], 1, d.MaxHealth);
+                d.Loyalty = Math.Clamp(d.Loyalty + outcome.DiscipleStatEffects.LoyaltyChange, 0, 100);
+                d.Mood = Math.Clamp(d.Mood + outcome.DiscipleStatEffects.MoodChange, 0, 100);
+                d.Health = Math.Clamp(d.Health + outcome.DiscipleStatEffects.HealthChange, 1, d.MaxHealth);
             }
         }
 

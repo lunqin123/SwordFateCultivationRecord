@@ -122,6 +122,21 @@ public partial class SettingsWindow : Window
         tab.AddChild(bgmDrop);
         tab.AddChild(SP(11));
 
+        // BGM loop mode
+        tab.AddChild(SP(4));
+        tab.AddChild(Section("循环模式"));
+        var modeRow = new HBoxContainer(); tab.AddChild(modeRow);
+        modeRow.AddChild(new Label { Text = "播放模式", CustomMinimumSize = new Vector2I(80, 0) }.WithFont(13, new Color(0.88f, 0.88f, 0.92f)));
+        modeRow.AddChild(new Control { SizeFlagsHorizontal = Control.SizeFlags.ExpandFill });
+        var modeDrop = new OptionButton();
+        modeDrop.AddItem("列表循环");
+        modeDrop.AddItem("单曲循环");
+        modeDrop.AddItem("随机播放");
+        modeDrop.Select((int)GameSettings.BgmMode);
+        modeDrop.ItemSelected += (idx) => { GameSettings.BgmMode = (BgmLoopMode)(int)idx; GameSettings.Save(); };
+        modeRow.AddChild(modeDrop);
+        tab.AddChild(SP(11));
+
         tab.AddChild(Note("将MP3文件放入 Resources/Audio/BGM 文件夹即可"));
     }
 

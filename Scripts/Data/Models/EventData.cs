@@ -29,6 +29,13 @@ public class EventData
     public int MinSectLevel { get; set; }
 }
 
+public class DiscipleStatEffect
+{
+    public int LoyaltyChange { get; set; }
+    public int MoodChange { get; set; }
+    public int HealthChange { get; set; }
+}
+
 public class EventOutcome
 {
     public string ResultText { get; set; } = "";
@@ -36,6 +43,6 @@ public class EventOutcome
     public int DiscipleCountChange { get; set; }
     public int ReputationChange { get; set; }
     public int PowerChange { get; set; }
-    public int[] DiscipleStatEffects { get; set; } = new int[3]; // [loyalty, mood, health]
+    public DiscipleStatEffect? DiscipleStatEffects { get; set; }
     public double DiscipleCultivationBonus { get; set; }
 }

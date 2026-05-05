@@ -114,6 +114,14 @@ public class SaveLoadManager
             EventLog = gm.EventLogEntries.ToList(),
             PlotProgress = gm.Plot.ExportProgress(),
             AchievementProgress = gm.Achievements.ExportProgress(),
+            HerbAccum = gm.GetHerbAccum(),
+            OreAccum = gm.GetOreAccum(),
+            TradeAccum = gm.GetTradeAccum(),
+            OuterGrowthAccum = gm.GetOuterGrowthAccum(),
+            OuterPromoteAccum = gm.GetOuterPromoteAccum(),
+            AutoAssignEnabled = gm.AutoAssignEnabled,
+            RecruitTournamentDays = gm.RecruitTournamentDays,
+            RngSeed = gm.RngSeed,
         };
         return data;
     }
@@ -140,6 +148,14 @@ public class SaveLoadManager
         if (data.EventLog != null) gm.EventLogEntries.AddRange(data.EventLog);
         gm.Plot.LoadProgress(data.PlotProgress ?? new PlotProgress());
         gm.Achievements.LoadProgress(data.AchievementProgress ?? new AchievementProgress());
+        gm.SetHerbAccum(data.HerbAccum);
+        gm.SetOreAccum(data.OreAccum);
+        gm.SetTradeAccum(data.TradeAccum);
+        gm.SetOuterGrowthAccum(data.OuterGrowthAccum);
+        gm.SetOuterPromoteAccum(data.OuterPromoteAccum);
+        gm.AutoAssignEnabled = data.AutoAssignEnabled;
+        gm.RecruitTournamentDays = data.RecruitTournamentDays;
+        gm.ApplyRngSeed(data.RngSeed);
     }
 }
 
