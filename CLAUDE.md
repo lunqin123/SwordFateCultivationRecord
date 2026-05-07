@@ -82,8 +82,12 @@
 - Scenes/ - .tscn场景文件 (Main, GameManager, StartMenu)
 - Resources/ - 美术/字体/音频资源
 
-## 编码规范
-- namespace: SwordFateCultivationRecord (file-scoped)
-- 数据模型用属性 { get; set; }，保持可序列化
-- UI 代码继承 Godot.Control，全程序化构建(无.tscn依赖)
-- 子系统是纯C#类，由GameManager持有并驱动
+## 编码规范 (详见 CODING_STYLE.md)
+- 缩进: **4空格** (全项目统一，不混用tab)
+- namespace: file-scoped (`namespace SwordFateCultivationRecord;`)
+- 类/方法: PascalCase，私有字段: `_camelCase`
+- 数据模型: `{ get; set; }` 属性，JSON可序列化
+- UI: 全程序化构建(无.tscn)，控制面板用 `PanelContainer`
+- 子系统: 纯C#类，由GameManager持有并驱动
+- 事件: EventBus静态事件总线解耦，非Godot信号
+- 颜色: `Color.Color8()` 而非 `new Color(int)`
