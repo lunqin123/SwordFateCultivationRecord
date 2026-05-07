@@ -135,10 +135,10 @@ public class CombatSystem
             for (int i = 0; i < party.Count; i++)
             {
                 // Constitution mitigates damage: 1% per point
-                double mitigation = 1.0 - party[i].EffConstitution * 0.008;
+                double mitigation = 1.0 - party[i].EffConstitution * 0.008; // 50 Con = 40% reduction, 100 Con = 80%
                 double individualDmg = eDmg / party.Count * Math.Max(0.1, mitigation);
                 totalMitigated += individualDmg;
-                int hpLoss = Math.Max(1, (int)(individualDmg * 2));
+                int hpLoss = Math.Max(1, (int)(individualDmg * 2)); // Scale to Health pool (100 base) vs partyHP (~500+)
                 party[i].Health = Math.Max(1, party[i].Health - hpLoss);
                 reports[i].HealthLost += hpLoss;
                 partyHP -= individualDmg;

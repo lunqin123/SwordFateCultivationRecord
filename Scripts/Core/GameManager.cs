@@ -673,7 +673,7 @@ public partial class GameManager : Node
 		foreach (var child in Children)
 		{
 			child.Age++;
-			if (child.Age >= 14)
+			if (child.Age >= 14) // 14 matches minimum Recruit() age (14-25), child becomes full disciple
 				matured.Add(child);
 		}
 		foreach (var child in matured)

@@ -213,9 +213,10 @@ public static class AudioManager
         {
             if (_sfxPool.Count >= MaxSfxPlayers)
             {
-                // Force-reuse the oldest player (no new node)
+                // Force-reuse the oldest player, rotate in pool
                 player = _sfxPool[0];
                 _sfxPool.RemoveAt(0);
+                _sfxPool.Add(player);
                 player.Stop();
             }
             else
