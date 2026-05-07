@@ -401,6 +401,7 @@ public partial class MainUI : Control
 		if (_smartPopup.Visible) { _smartPopup.Hide(); return; }
 		if (_facDetailPopup.Visible) { _facDetailPopup.Hide(); return; }
 		if (_bgmSelectPopup.Visible) { _bgmSelectPopup.Hide(); return; }
+		if (_combatPopup.Visible) { _combatPopup.Hide(); return; }
 		if (_realmPopup.Visible) { _realmPopup.Hide(); return; }
 		if (_plotPopup.Visible) { _plotPopup.Hide(); return; }
 		if (_endingPopup.Visible) { _endingPopup.Hide(); return; }
@@ -755,4 +756,257 @@ public partial class MainUI : Control
 		root.AddChild(SP(10));
 	}
 
+
+	// ===================== COMBAT POPUP =====================
+
+	void BuildCombatPopup()
+	{
+		_combatPopup = new Window { Title = "宗门出征", Size = new Vector2I(700, 560), Visible = false, Exclusive = true };
+		_combatPopup.CloseRequested += () => _combatPopup.Hide();
+		var cv = new VBoxContainer(); cv.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		_combatPopup.AddChild(cv);
+		AddChild(_combatPopup);
+	}
+
+	void ShowCombatMissions()
+	{
+		var missions = GM.GetCombatMissions();
+		var root = (VBoxContainer)_combatPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+		root.AddChild(HL("— 宗门出征 —", 20, UITheme.Gold));
+		root.AddChild(SP(4));
+		root.AddChild(new Label { Text = "选一款战斗任务，派遣弟子出征", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(12, UITheme.TextDim));
+		root.AddChild(SP(8));
+
+		if (missions.Count == 0)
+		{
+			root.AddChild(new Label { Text = "暂无可用战斗任务", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.TextDim));
+			root.AddChild(SP(10));
+			var closeBtn = SmallBtn("归去"); closeBtn.Pressed += () => _combatPopup.Hide();
+			var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(closeBtn); root.AddChild(cc);
+			_combatPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_combatPopup.GetChild(0));
+			return;
+		}
+
+		var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; root.AddChild(scroll);
+		var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; scroll.AddChild(list);
+
+		foreach (var m in missions)
+		{
+			var card = new PanelContainer { CustomMinimumSize = new Vector2I(0, 80), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			var cs = new StyleBoxFlat
+			{
+				BgColor = new Color(0.10f, 0.07f, 0.14f),
+				CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
+				CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6,
+				BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1,
+				BorderColor = UITheme.GoldDark, ContentMarginLeft = 12, ContentMarginRight = 12,
+				ContentMarginTop = 8, ContentMarginBottom = 8,
+			};
+			card.AddThemeStyleboxOverride("panel", cs);
+			var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(row);
+
+			string icon = m.EnemyPower switch { < 80 => "⚔", < 200 => "⚡", < 400 => "🔥", _ => "💀" };
+			var iconLabel = new Label { Text = icon, CustomMinimumSize = new Vector2I(48, 48) };
+			iconLabel.AddThemeFontSizeOverride("font_size", 28);
+			iconLabel.AddThemeColorOverride("font_color", UITheme.Gold);
+			row.AddChild(iconLabel); row.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+
+			var infoCol = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			infoCol.AddChild(new Label { Text = m.Name }.WithFont(16, UITheme.Gold));
+			infoCol.AddChild(new Label { Text = m.Description, AutowrapMode = TextServer.AutowrapMode.WordSmart }.WithFont(11, UITheme.TextDim));
+			string rewards = string.Join(" ", m.VictoryRewards.Select(kv => ResName(kv.Key) + "+" + kv.Value));
+			string detailStr = $"敌人: {m.EnemyName}  战力 {m.EnemyPower}  奖励: {rewards}  声望+{m.VictoryReputation}";
+			infoCol.AddChild(new Label { Text = detailStr }.WithFont(11, UITheme.TextBlue));
+			row.AddChild(infoCol);
+
+			var selBtn = new Button { Text = "征讨", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(80, 36) };
+			selBtn.AddThemeFontSizeOverride("font_size", 14); selBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+			selBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+			selBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal());
+			selBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+			int mid = m.MissionId;
+			selBtn.Pressed += () => ShowCombatDiscipleSelect(mid);
+			var btnCenter = new CenterContainer(); btnCenter.AddChild(selBtn);
+			row.AddChild(btnCenter);
+			list.AddChild(card); list.AddChild(SP(4));
+		}
+
+		root.AddChild(SP(8));
+		var closeButton = SmallBtn("归去"); closeButton.Pressed += () => _combatPopup.Hide();
+		var cc2 = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc2.AddChild(closeButton); root.AddChild(cc2);
+		root.AddChild(SP(8));
+
+		_combatPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_combatPopup.GetChild(0));
+	}
+
+	void ShowCombatDiscipleSelect(int missionId)
+	{
+		var mission = GM.GetCombatMissions().FirstOrDefault(m => m.MissionId == missionId);
+		if (mission == null) return;
+
+		var root = (VBoxContainer)_combatPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+		root.AddChild(HL("— 选将出征 —", 20, UITheme.Gold));
+		root.AddChild(SP(4));
+		string titleStr = $"目标: {mission.Name}  (战力 {mission.EnemyPower}) 最多{mission.MaxDisciples}人";
+		root.AddChild(new Label { Text = titleStr, HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextOrange));
+		root.AddChild(SP(8));
+
+		var disciples = GM.Disciples.AllDisciples.Where(d => d.Health > 0).ToList();
+		if (disciples.Count == 0)
+		{
+			root.AddChild(new Label { Text = "没有可出征的弟子", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(14, UITheme.TextDim));
+			root.AddChild(SP(10));
+			var backBtn2 = SmallBtn("返回"); backBtn2.Pressed += ShowCombatMissions;
+			var cc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; cc.AddChild(backBtn2); root.AddChild(cc);
+			_combatPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_combatPopup.GetChild(0));
+			return;
+		}
+
+		var scroll = new ScrollContainer { SizeFlagsVertical = SizeFlags.ExpandFill }; root.AddChild(scroll);
+		var list = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; scroll.AddChild(list);
+
+		var checks = new Dictionary<int, CheckBox>();
+		int maxSelect = mission.MaxDisciples;
+
+		foreach (var d in disciples)
+		{
+			var card = new PanelContainer { CustomMinimumSize = new Vector2I(0, 56), SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			var cs = new StyleBoxFlat
+			{
+				BgColor = new Color(0.10f, 0.08f, 0.14f),
+				CornerRadiusBottomLeft = 6, CornerRadiusBottomRight = 6,
+				CornerRadiusTopLeft = 6, CornerRadiusTopRight = 6,
+				BorderWidthBottom = 1, BorderWidthLeft = 1, BorderWidthRight = 1, BorderWidthTop = 1,
+				BorderColor = UITheme.GoldDark, ContentMarginLeft = 8, ContentMarginRight = 8,
+				ContentMarginTop = 6, ContentMarginBottom = 6,
+			};
+			card.AddThemeStyleboxOverride("panel", cs);
+			var row = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; card.AddChild(row);
+
+			var cb = new CheckBox { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			cb.AddThemeFontSizeOverride("font_size", 13);
+			cb.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+			string healthStr = BarsString(d.Health, d.MaxHealth, 6);
+			string cbText = $"{d.Name}  [{d.FullRealmName}]  战力{d.CombatPower}  气血{healthStr}  {d.Age}岁";
+			cb.Text = cbText;
+			checks[d.Id] = cb;
+			cb.Pressed += () =>
+			{
+				int checkedCount = checks.Values.Count(c => c.ButtonPressed);
+				if (checkedCount > maxSelect)
+				{
+					cb.ButtonPressed = false;
+					EventBus.EmitNotification("启禀", $"最多选择{maxSelect}人出征");
+				}
+			};
+			row.AddChild(cb);
+			list.AddChild(card); list.AddChild(SP(3));
+		}
+
+		root.AddChild(SP(8));
+
+		var btnRow = new HBoxContainer(); var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+		btnRow.AddChild(bc); var inner = new HBoxContainer(); bc.AddChild(inner);
+
+		var goBtn = new Button { Text = "出  征", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(140, 44) };
+		goBtn.AddThemeFontSizeOverride("font_size", 16); goBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+		goBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+		goBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal());
+		goBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		goBtn.Pressed += () =>
+		{
+			var selected = checks.Where(kv => kv.Value.ButtonPressed).Select(kv => kv.Key).ToList();
+			if (selected.Count == 0) { EventBus.EmitNotification("启禀", "请至少选择一名弟子"); return; }
+			if (selected.Count > maxSelect) { EventBus.EmitNotification("启禀", $"最多选择{maxSelect}人"); return; }
+			ExecuteAndShowCombat(missionId, selected);
+		};
+		inner.AddChild(goBtn); inner.AddChild(new Control { CustomMinimumSize = new Vector2I(16, 0) });
+
+		var backBtn = new Button { Text = "返回", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(100, 36) };
+		backBtn.AddThemeFontSizeOverride("font_size", 14); backBtn.AddThemeColorOverride("font_color", UITheme.TextDim);
+		backBtn.AddThemeColorOverride("font_hover_color", UITheme.Gold);
+		backBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal());
+		backBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		backBtn.Pressed += ShowCombatMissions;
+		inner.AddChild(backBtn);
+		root.AddChild(btnRow); root.AddChild(SP(8));
+
+		_combatPopup.Title = $"选将 \u00B7 {mission.Name}";
+		_combatPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_combatPopup.GetChild(0));
+	}
+
+	void ExecuteAndShowCombat(int missionId, List<int> discipleIds)
+	{
+		var result = GM.ExecuteCombatMission(discipleIds, missionId);
+		if (result == null) return;
+
+		var root = (VBoxContainer)_combatPopup.GetChild(0);
+		root.FreeChildren();
+		root.AddChild(SP(10));
+
+		string outcomeTitle = result.Victory ? "\u2726 大获全胜 \u2726" : "\u2717 铩羽而归 \u2717";
+		Color outcomeColor = result.Victory ? UITheme.Gold : UITheme.Crimson;
+		root.AddChild(HL(outcomeTitle, 22, outcomeColor));
+		root.AddChild(SP(4));
+		root.AddChild(new Label { Text = $"{result.MissionName}  ({result.RoundsFought}回合)", HorizontalAlignment = HorizontalAlignment.Center }.WithFont(13, UITheme.TextBlue));
+		root.AddChild(SP(10));
+
+		var logLabel = new Label { Text = result.BattleLog, AutowrapMode = TextServer.AutowrapMode.WordSmart, HorizontalAlignment = HorizontalAlignment.Center };
+		logLabel.AddThemeFontSizeOverride("font_size", 13);
+		logLabel.AddThemeColorOverride("font_color", UITheme.TextPrimary);
+		root.AddChild(logLabel);
+		root.AddChild(SP(10));
+
+		if (result.Rewards.Count > 0 || result.ReputationGain != 0)
+		{
+			root.AddChild(HL("战果", 16, UITheme.Gold)); root.AddChild(SP(4));
+			var rewardLine = new HBoxContainer(); var rc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+			rewardLine.AddChild(rc); var ri = new HBoxContainer(); rc.AddChild(ri);
+			foreach (var kv in result.Rewards)
+			{
+				ri.AddChild(new Label { Text = $"{ResName(kv.Key)}+{kv.Value}" }.WithFont(12, UITheme.TextGreen));
+				ri.AddChild(new Control { CustomMinimumSize = new Vector2I(10, 0) });
+			}
+			if (result.ReputationGain != 0)
+			{
+				Color repColor = result.ReputationGain > 0 ? UITheme.TextOrange : UITheme.Crimson;
+				string repStr = result.ReputationGain > 0 ? $"声望+{result.ReputationGain}" : $"声望{result.ReputationGain}";
+				ri.AddChild(new Label { Text = repStr }.WithFont(12, repColor));
+			}
+			if (result.EquipmentGained > 0)
+			{
+				ri.AddChild(new Label { Text = "法器+1" }.WithFont(12, new Color(0.7f, 0.3f, 1.0f)));
+			}
+			root.AddChild(rewardLine); root.AddChild(SP(10));
+		}
+
+		if (result.DiscipleReports.Count > 0)
+		{
+			root.AddChild(HL("弟子状况", 15, UITheme.Gold)); root.AddChild(SP(4));
+			foreach (var r in result.DiscipleReports)
+			{
+				string status = r.WasInjured ? "\u26A0 受伤" : "\u2713 轻伤";
+				Color sc = r.WasInjured ? UITheme.TextOrange : UITheme.TextGreen;
+				string reportStr = $"  {r.Name}  战力{r.StartingPower}  造成伤害{r.DamageDealt}  气血损失{r.HealthLost}  {status}";
+				root.AddChild(new Label { Text = reportStr }.WithFont(12, sc));
+			}
+		}
+
+		root.AddChild(SP(14));
+		var closeBtn = new Button { Text = "返回宗门", Alignment = HorizontalAlignment.Center, CustomMinimumSize = new Vector2I(180, 44) };
+		closeBtn.AddThemeFontSizeOverride("font_size", 16); closeBtn.AddThemeColorOverride("font_color", UITheme.Gold);
+		closeBtn.AddThemeColorOverride("font_hover_color", new Color(1, 1, 1));
+		closeBtn.AddThemeStyleboxOverride("normal", UITheme.BtnStyleNormal());
+		closeBtn.AddThemeStyleboxOverride("hover", UITheme.BtnStyleHover());
+		closeBtn.Pressed += () => { _combatPopup.Hide(); RefreshAll(); };
+		var bc = new CenterContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill }; bc.AddChild(closeBtn);
+		root.AddChild(bc); root.AddChild(SP(10));
+
+		_combatPopup.Title = result.Victory ? "大获全胜" : "铩羽而归";
+		_combatPopup.PopupCentered(); UIAnimator.WindowOpen((Control)_combatPopup.GetChild(0));
+	}
 }

@@ -16,6 +16,7 @@ public partial class GameManager : Node
 	public PlotSystem Plot { get; private set; } = new();
 	public SecretRealmSystem Realm { get; private set; } = new();
 	public AchievementSystem Achievements { get; private set; } = new();
+	public CombatSystem Combat { get; private set; } = new();
 	public List<EquipmentData> AllEquipment { get; private set; } = new();
 
 	// Sect state
@@ -55,6 +56,7 @@ public partial class GameManager : Node
 	public int RngSeed { get; private set; } = System.Environment.TickCount;
 	private Random _rng = new(0);  // reset in InitializeNewGame or ApplyRngSeed
 	private readonly List<DiscipleData> _pendingNewborns = new();
+	public List<DiscipleData> Children { get; set; } = new();
 	public List<LogEntry> EventLogEntries { get; set; } = new();
 
 	// ====== Level thresholds ======
@@ -113,6 +115,7 @@ public partial class GameManager : Node
 		PendingRecruitCandidates = null;
 		EventLogEntries.Clear();
 		_pendingNewborns.Clear();
+		Children = new List<DiscipleData>();
 		_herbAccum = _oreAccum = _tradeAccum = 0;
 		_outerGrowthAccum = _outerPromoteAccum = 0;
 		AutoAssignEnabled = false;
@@ -592,6 +595,41 @@ public partial class GameManager : Node
 
 	public void NextDay() => AdvanceTime(1);
 
+	// ====== Combat ======
+
+	public List<CombatMission> GetCombatMissions()
+	{
+		if (!IsInitialized) return new();
+		return Combat.GetAvailableMissions(SectLevel);
+	}
+
+	public CombatResult? ExecuteCombatMission(List<int> discipleIds, int missionId)
+	{
+		if (!IsInitialized) return null;
+		var mission = Combat.GetAvailableMissions(SectLevel).FirstOrDefault(m => m.MissionId == missionId);
+		if (mission == null) return null;
+		var party = discipleIds.Select(id => Disciples.Get(id)).Where(d => d != null).ToList();
+		if (party.Count == 0 || party.Count > mission.MaxDisciples) return null;
+		var result = Combat.Resolve(party!, mission);
+		// Apply rewards
+		foreach (var kv in result.Rewards)
+		{
+			if (kv.Value > 0) Resources.Add(kv.Key, kv.Value);
+			else if (kv.Value < 0) Resources.Spend(kv.Key, -kv.Value);
+		}
+		SectReputation = Math.Max(0, SectReputation + result.ReputationGain);
+		if (result.EquipmentGained > 0)
+		{
+			var eq = EquipmentTable.CraftRandom(SectLevel);
+			AllEquipment.Add(eq);
+			LogEvent($"战斗缴获法器「{eq.Name}」");
+		}
+		string outcome = result.Victory ? "击败" : "败于";
+		LogEvent($"出征{mission.Name}: {outcome}{mission.EnemyName}");
+		AdvanceTime(1);
+		return result;
+	}
+
 	// ====== Event ======
 
 	public void ResolveEvent(int choiceIndex)
@@ -623,9 +661,28 @@ public partial class GameManager : Node
 	{
 		foreach (var child in _pendingNewborns)
 		{
-			Disciples.AddChildDisciple(child);
+			Children.Add(child);
+			LogEvent($"{child.Name}出生");
 		}
 		_pendingNewborns.Clear();
+	}
+
+	void GrowChildren()
+	{
+		var matured = new List<DiscipleData>();
+		foreach (var child in Children)
+		{
+			child.Age++;
+			if (child.Age >= 14)
+				matured.Add(child);
+		}
+		foreach (var child in matured)
+		{
+			Children.Remove(child);
+			Disciples.AddChildDisciple(child);
+			LogEvent($"{child.Name}已满14岁，正式成为内门弟子");
+			EventBus.EmitNotification("宗门之喜", $"{child.Name}已满14岁，正式拜入内门！");
+		}
 	}
 
 	// ====== Companion ======

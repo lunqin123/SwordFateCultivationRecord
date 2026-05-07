@@ -61,6 +61,8 @@ public partial class MainUI : Control
 	private Window _endingPopup = null!;
 	private bool _endingShown;
 	private Button _realmBtn = null!;
+	private Window _combatPopup = null!;
+	private Button _combatBtn = null!;
 
 	// Smart/Batch assign
 	private Window _smartPopup = null!;
@@ -207,7 +209,11 @@ public partial class MainUI : Control
 		_realmBtn = Btn("秘境探索"); _realmBtn.CustomMinimumSize = new Vector2I(110, 38);
 		_realmBtn.Visible = false;
 		_realmBtn.Pressed += () => { UIAnimator.ButtonPress(_realmBtn); StartRealmExploration(); };
-		bottomHBox.AddChild(_realmBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
+		bottomHBox.AddChild(_realmBtn); bottomHBox.AddChild(new Control { CustomMinimumSize = new Vector2I(8, 0) });
+		_combatBtn = Btn("出征"); _combatBtn.CustomMinimumSize = new Vector2I(110, 38);
+		_combatBtn.Visible = false;
+		_combatBtn.Pressed += () => { UIAnimator.ButtonPress(_combatBtn); ShowCombatMissions(); };
+		bottomHBox.AddChild(_combatBtn); bottomHBox.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
 		_bgmIndicator = new Button { Text = "♪", Alignment = HorizontalAlignment.Center };
 		_bgmIndicator.AddThemeFontSizeOverride("font_size", 10); _bgmIndicator.AddThemeColorOverride("font_color", new Color(0.4f, 0.6f, 0.4f));
 		_bgmIndicator.AddThemeColorOverride("font_hover_color", new Color(0.6f, 0.9f, 0.6f));

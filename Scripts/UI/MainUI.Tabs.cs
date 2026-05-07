@@ -73,7 +73,8 @@ public partial class MainUI : Control
 
 	void RefreshAll() { if (!IsInsideTree()) return; RefreshTime(); RefreshResources(); RefreshSectInfo(); RefreshTournament(); RefreshTabContent(_activeTab); RefreshBgmIndicator(); RefreshButtons(); UpdatePlotIndicator(); }
 	void RefreshTime() => _timeLabel.Text = GM.Time.GetDateString();
-	void RefreshSectInfo() { _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}  内门{GM.Disciples.Count}/{GM.MaxDisciples}  外门{GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}"; _realmBtn.Visible = GM.SectLevel >= 3; }
+	void RefreshSectInfo() { _sectLabel.Text = $"{GM.FullSectName} Lv.{GM.SectLevel}  内门{GM.Disciples.Count}/{GM.MaxDisciples}  外门{GM.OuterDiscipleCount}/{GM.MaxOuterDisciples}"; _realmBtn.Visible = GM.SectLevel >= 3;
+		_combatBtn.Visible = GM.SectLevel >= 2; }
 	void RefreshButtons() { _nextDayBtn.Disabled = GM.PendingEvent != null || GM.PendingRecruitCandidates != null; }
 	void RefreshTournament()
 	{
@@ -107,6 +108,7 @@ public partial class MainUI : Control
 		StatCard(statGrid, "灵筑", $"{GM.Facilities.AllFacilities.Count(f => f.IsBuilt)}座", UITheme.TextGreen);
 		StatCard(statGrid, "营造中", $"{GM.Facilities.AllFacilities.Count(f => f.IsUnderConstruction)}座", UITheme.TextOrange);
 		StatCard(statGrid, "道缘", $"{GM.Companions.AllCompanions.Count(c => c.IsMarried)}对", new Color(1.0f, 0.45f, 0.65f));
+		StatCard(statGrid, "子嗣", $"{GM.Children.Count}人", new Color(0.5f, 0.8f, 0.9f));
 		StatCard(statGrid, "法器库存", $"{GM.AllEquipment.Count(e => e.EquippedById < 0)}件", UITheme.TextBlue);
 		c.AddChild(SP(10)); c.AddChild(HR()); c.AddChild(SP(10));
 

@@ -40,6 +40,7 @@ public class SaveGameData
     public List<EquipmentData> Equipment { get; set; } = new();
     public PlotProgress PlotProgress { get; set; } = new();
     public AchievementProgress AchievementProgress { get; set; } = new();
+	public List<DiscipleData> Children { get; set; } = new();
     public int RngSeed { get; set; }
 }
 

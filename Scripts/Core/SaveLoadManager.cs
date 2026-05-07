@@ -113,6 +113,7 @@ public class SaveLoadManager
             Equipment = gm.AllEquipment.ToList(),
             EventLog = gm.EventLogEntries.ToList(),
             PlotProgress = gm.Plot.ExportProgress(),
+            Children = gm.Children.ToList(),
             AchievementProgress = gm.Achievements.ExportProgress(),
             HerbAccum = gm.GetHerbAccum(),
             OreAccum = gm.GetOreAccum(),
@@ -155,6 +156,8 @@ public class SaveLoadManager
         gm.SetOuterPromoteAccum(data.OuterPromoteAccum);
         gm.AutoAssignEnabled = data.AutoAssignEnabled;
         gm.RecruitTournamentDays = data.RecruitTournamentDays;
+        gm.Children.Clear();
+        if (data.Children != null) gm.Children.AddRange(data.Children);
         gm.ApplyRngSeed(data.RngSeed);
     }
 }
