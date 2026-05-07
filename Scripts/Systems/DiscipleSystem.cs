@@ -167,6 +167,7 @@ public class DiscipleSystem
             {
                 d.CurrentStamina = Math.Min(d.MaxStamina, d.CurrentStamina + 30);
                 d.Mood = Math.Min(100, d.Mood + 12);
+                d.Health = Math.Min(d.MaxHealth, d.Health + 6);
                 continue;
             }
 

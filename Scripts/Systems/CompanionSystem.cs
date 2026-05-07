@@ -177,7 +177,12 @@ public class CompanionSystem
             // Inherit a skill boost: "道脉传承" skill ID 10
             Skills = new Dictionary<int, int> { { 10, 1 } },
             SpiritRoot = GameManager.Instance.Disciples.RollSpiritRoot(true),
+            Background = p1.IsMale == childIsMale ? p1.Background : p2.Background,
+            Personality = _rng.Next(2) == 0 ? p1.Personality : p2.Personality,
+            Trait = _rng.Next(3) == 0 ? (p1.Trait != "无" ? p1.Trait : p2.Trait) : "无", // ~33% inherit parent trait
         };
+        if (string.IsNullOrEmpty(child.Background)) child.Background = "宗门之后";
+        if (string.IsNullOrEmpty(child.Personality)) child.Personality = "天资聪颖";
         return child;
     }
 
